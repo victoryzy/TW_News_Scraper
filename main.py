@@ -5,20 +5,26 @@ from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from datetime import datetime, timedelta
 
+#############################################################
 # 0   不爬文 ;  1   爬文
-SwitchLTN     0  # 自由時報
-SwitchUDN     0  # 聯合新聞網
-SwitchCNA     0  # 中央社
-SwitchET      0  # ETtoday
-SwitchApple   0  # 壹蘋新聞網 OK
+SwitchLTN     0   # 自由時報 OK
+SwitchUDN     0   # 聯合新聞網
+SwitchCNA     0   # 中央社
+SwitchET      0   # ETtoday
+SwitchApple   0   # 壹蘋新聞網 OK
 
+timeSlot      1.5   # 收集幾個小時內的新聞
 
+# 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
+# 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
+# 可以把下面這個數字加大
+scrollPages   3   
 
 places   ["竹市", "消防局", "消防署", "訓練中心", "竹塹"]
 persons   ["立委", "市長", "議員", "高虹安", "高市長", 
            "署長", "科長", "局長", "消防員", "替代役",
            "義消", "義警消", "分隊長", "小隊長", "大隊長", 
-           "救護技術員", "EMT", "消促會", "消防員工作權益促進會"]
+           "救護技術員", "EMT", "消促會", "工作權益促進會"]
 issues   ["災情",  "救災", "救護", "屍", "倒塌", "消防", 
           "到院前", "特搜", "防災", "傷亡", "化學", 
          "救援", "撫卹", "119", "一氧化碳"]
@@ -26,35 +32,37 @@ issues   ["災情",  "救災", "救護", "屍", "倒塌", "消防",
 issueFire   ["火災", "失火", "防火", "起火", "大火", "火光", "火燒車",
              "水線", "滅火器", "火海", "打火", "白煙", "黑煙", "灌救",
              "火調", "燒毀", "烈焰", "爆炸", "釀災", "冒煙", "濃煙",
-             "延燒", "火警", "燒起來", "雲梯車", "火燒",]
-issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震",]
-issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "演練", "宣導", "搜救", "灌救", "安檢",]
+             "延燒", "火警", "燒起來", "雲梯車", "火燒"]
+issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震"]
+issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "演練", "宣導", "搜救", "灌救", "安檢"]
 issueGoods   ["AED", "住警器", "消防栓"]
 issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺", "珍惜生命"]
 issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
                "死者", "殉職", "失聯", "嗆暈", "意識模糊", "遺體", 
                "亡", "命危", "OHCA", "無生命跡象", "中毒", "不治",
                "任務結束", "無呼吸心跳", "受困", "罹難", "受傷", 
-               "昏迷", "無意識",]
+               "昏迷", "無意識"]
+#############################################################
 
 issues   issues + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
 
 opt   webdriver.ChromeOptions()
+
+# [TODO] 要判斷作業系統加不同的argument
 opt.add_argument("user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+
 driver   webdriver.Chrome(options opt)
-
-now   datetime.now()
-earlier   now - timedelta(hours 2)
-
 
 #################################################################################
 
 # 自由時報 即時新聞總覽
 if SwitchLTN:
     url   "https://news.ltn.com.tw/list/breakingnews"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
 
     driver.get(url)
-    for x in range(1, 3):
+    for x in range(0, scrollPages):
         time.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(5)
@@ -63,41 +71,44 @@ if SwitchLTN:
 
     counter   1
     for link in links:
-        newsTime   re.findall("\d+:\d+", str(link.contents[1]))[0]
+        newsTime   str(link.find("span", class_ "time").contents[0])
+        newsTitle   str(link.find("h3", class_ "title").contents[0])
+        newsLink   str(link['href'])
+
         print(str(counter) + "  " + newsTime)
         counter +  1
         
-        subLink   link['href']
-        subResult   requests.get(subLink)
+        subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
-        content   subSoup.find_all('p')
+        newsContent   subSoup.find_all('p')
 
         flagPlace   False
         flagPerson   False
         flagIssue   False
         keywords   []
 
-        for paragraph in content:
-            if (len(paragraph) !  0 and "不用抽" in paragraph.contents[0]):
+        newsContent2   []
+        for content in newsContent:
+            if "不用抽" not in str(content):
+                newsContent2.append(content)
+            else:
                 break
+        
+        newsContent2   str(newsContent2)
 
-            for sentence in paragraph:
-                if not flagPlace:
-                    for place in places:
-                        if place in sentence:
-                            flagPlace   True
-                            keywords.append(place)
-                if not flagPerson:
-                    for person in persons:
-                        if person in sentence:
-                            flagPerson   True
-                            keywords.append(person)
-                if not flagIssue:
-                    for issue in issues:
-                        if issue in sentence:
-                            flagIssue   True
-                            keywords.append(issue)
+        for place in places:
+            if place in newsContent2:
+                flagPlace   True
+                keywords.append(place)
+        for person in persons:
+            if person in newsContent2:
+                flagPerson   True
+                keywords.append(person)
+        for issue in issues:
+            if issue in newsContent2:
+                flagIssue   True
+                keywords.append(issue)
 
         if flagPlace or flagIssue or (flagPlace and flagPerson):
             print(link['title'], "（自由）")
@@ -109,9 +120,11 @@ if SwitchLTN:
 # 聯合新聞網 即時新聞
 if SwitchUDN:
     url   "https://udn.com/news/breaknews"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
 
     driver.get(url)
-    for x in range(1, 3):
+    for x in range(0, scrollPages):
         time.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(5)
@@ -191,13 +204,13 @@ if SwitchUDN:
 # 中央社 即時新聞列表
 if SwitchCNA:
     url   "https://cna.com.tw/list/aall.aspx"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
 
     driver.get(url)
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('ul', class_ "mainList imgModule")
     time.sleep(1)
-    now   datetime.now()
-    earlier   now - timedelta(hours 2)
 
     counter   1
     for link in links[0]:
@@ -257,14 +270,14 @@ if SwitchCNA:
 # ETtoday 新聞總覽
 if SwitchET:
     url   "https://ettoday.net/news/news-list.htm"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
 
     driver.get(url)
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('div', class_ "part_list_2")
     time.sleep(1)
 
-    now   datetime.now()
-    earlier   now - timedelta(hours 2)
     counter   1
     for link in links[0].contents:
         newsTitle   None
@@ -324,17 +337,16 @@ if SwitchET:
 # 壹蘋新聞網 最新新聞列表
 if SwitchApple:
     url   "https://tw.nextapple.com/realtime/latest"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
 
     driver.get(url)
-    for x in range(1, 3):
+    for x in range(0, scrollPages):
         time.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('article', class_ "post-style3 infScroll postCount")
     time.sleep(1)
-
-    now   datetime.now()
-    earlier   now - timedelta(hours 2)
 
     counter   1
     for link in links:
