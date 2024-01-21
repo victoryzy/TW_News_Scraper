@@ -6,19 +6,34 @@ from selenium import webdriver
 from datetime import datetime, timedelta
 
 #############################################################
+"""
+1. 有些網站新聞的時間沒有日期資訊，假如跨日的話可能會算錯時間，再想想要修改還是當作限制。
+2. (Done)判斷是否要抓的條件可以寫成function，input是字串，output是bool 
+3. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
+"""
+#############################################################
 # 0   不爬文 ;  1   爬文
-SwitchLTN     0   # 自由時報 OK
-SwitchUDN     0   # 聯合新聞網
-SwitchCNA     0   # 中央社
-SwitchET      0   # ETtoday
-SwitchApple   0   # 壹蘋新聞網 OK
+SwitchLTN       1   # 自由時報 (沒有日期資訊)
+SwitchUDN       1   # 聯合新聞網
+SwitchCNA       1   # 中央社
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
 
-timeSlot      1.5   # 收集幾個小時內的新聞
+SwitchSET       0   # 三立新聞網  https://setn.com/viewall.aspx             可爬，滾動加載，不確定會不會被擋
+SwitchMIRROR    0   # 鏡週刊     https://mirrormedia.mg/category/news      可爬，滾動加載，不確定會不會被擋
+SwitchNOWNEWS   0   # NOWNEWS   https://nownews.com/cat/breaking          可爬，需要按按鍵加載，不確定會不會被擋
+SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime           可爬，需換頁加載，不確定會不會被擋
+SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新           可爬，需換頁加載，不確定會不會被擋
+
+SwitchTVBS      0   # TVBS https://news.tvbs.com.tw/realtime 可爬，滾動加載，不確定會不會被擋，新聞時間要點進去看
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
-# 可以把下面這個數字加大
-scrollPages   3   
+# 可以把下面這個數字加大，但爬文所需時間會慢一些
+scrollPages   2   
+timeSlot      1   # 收集幾個小時內的新聞
+
+scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "訓練中心", "竹塹"]
 persons   ["立委", "市長", "議員", "高虹安", "高市長", 
@@ -33,7 +48,7 @@ issueFire   ["火災", "失火", "防火", "起火", "大火", "火光", "火燒
              "水線", "滅火器", "火海", "打火", "白煙", "黑煙", "灌救",
              "火調", "燒毀", "烈焰", "爆炸", "釀災", "冒煙", "濃煙",
              "延燒", "火警", "燒起來", "雲梯車", "火燒"]
-issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震"]
+issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震", "土石流"]
 issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "演練", "宣導", "搜救", "灌救", "安檢"]
 issueGoods   ["AED", "住警器", "消防栓"]
 issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺", "珍惜生命"]
@@ -44,7 +59,7 @@ issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
                "昏迷", "無意識"]
 #############################################################
 
-issues   issues + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
+issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
 
 opt   webdriver.ChromeOptions()
 
@@ -55,6 +70,32 @@ driver   webdriver.Chrome(options opt)
 
 #################################################################################
 
+
+def isRelatedNews(content):
+    flagPlace   False
+    flagPerson   False
+    flagIssue   False
+
+    keywords   []
+
+    for place in places:
+        if place in content:
+            flagPlace   True
+            keywords.append(place)
+    for person in persons:
+        if person in content:
+            flagPerson   True
+            keywords.append(person)
+    for issue in issues:
+        if issue in content:
+            flagIssue   True
+            keywords.append(issue)
+
+    if flagPlace or flagIssue or (flagPlace and flagPerson):
+        return keywords
+    else:
+        return []
+
 # 自由時報 即時新聞總覽
 if SwitchLTN:
     url   "https://news.ltn.com.tw/list/breakingnews"
@@ -63,9 +104,9 @@ if SwitchLTN:
 
     driver.get(url)
     for x in range(0, scrollPages):
-        time.sleep(5)
+        time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(5)
+    time.sleep(scrollDelay)
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('a', class_ "tit")
 
@@ -83,11 +124,6 @@ if SwitchLTN:
 
         newsContent   subSoup.find_all('p')
 
-        flagPlace   False
-        flagPerson   False
-        flagIssue   False
-        keywords   []
-
         newsContent2   []
         for content in newsContent:
             if "不用抽" not in str(content):
@@ -97,23 +133,13 @@ if SwitchLTN:
         
         newsContent2   str(newsContent2)
 
-        for place in places:
-            if place in newsContent2:
-                flagPlace   True
-                keywords.append(place)
-        for person in persons:
-            if person in newsContent2:
-                flagPerson   True
-                keywords.append(person)
-        for issue in issues:
-            if issue in newsContent2:
-                flagIssue   True
-                keywords.append(issue)
+        keywords   isRelatedNews(newsContent2)
 
-        if flagPlace or flagIssue or (flagPlace and flagPerson):
+        if len(keywords) !  0:
             print(link['title'], "（自由）")
             print(link['href'])
             print(keywords)
+
 
 #################################################################################
 
@@ -125,9 +151,9 @@ if SwitchUDN:
 
     driver.get(url)
     for x in range(0, scrollPages):
-        time.sleep(5)
+        time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(5)
+    time.sleep(scrollDelay)
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('div', class_ "story-list__news")
 
@@ -137,35 +163,27 @@ if SwitchUDN:
             print("跳過「猜你喜歡」部分的新聞，離開聯合新聞網。")
             break
 
-        time_   re.findall("<time class \"story-list__time\"[\w\W]*>[\w\W]*\d+-\d+-\d+ \d+:\d+[\w\W]*<\/time>", str(link))
+        titleAndLink   link.find("h2").find("a")
+        newsTitle   str(titleAndLink["title"])
+        newsLink   "https://udn.com" + str(titleAndLink["href"]).replace("?from udn-ch1_breaknews-1-0-news", "")
 
-        if len(time_)    0:
-            print("ERROR!!!!!")
-            print("           ")
-            print(link)
-            exit()
+        newsTimeList   link.find("time", class_ "story-list__time").contents
+        newsTime   re.search("\d{4}-\d{2}-\d{2} \d{2}:\d{2}", str(newsTimeList)).group(0)
 
-        time_   re.findall("\d+-\d+-\d+ \d+:\d+", str(time_[0]))
-        newsTime   str(time_[0])
-
-        title_   re.findall("<h2>\n<a data-content_level[\w\W]*<\/a>\n<\/h2>", str(link))
-        href_   re.findall("href \"[\w\W]*\" title", str(title_[0]))
-        href_   href_[0][6:]
-        newsLink   "https://udn.com" + href_[:-7]
-
-        title_   re.findall("title \"[\w\W]*\"", str(title_[0]))
-        title_   title_[0][7:]
-        newsTitle   title_[:-1]
-        
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
         contents   subSoup.find_all('section', class_ "article-content__wrapper")
+
+        date_format   "%Y-%m-%d %H:%M"
+        newsTimeObj   datetime.strptime(newsTime, date_format)
+        if newsTimeObj < earlier:
+            break
 
         print(str(counter) + " " + str(newsTime))
         counter +  1
 
         newsContent   ""
-        for content in contents[0]:
+        for content in contents[0]:     ## bug here
             if isinstance(content, Tag):
                 div   content.find("div", class_   "article-content__paragraph")
                 if div is not None:
@@ -176,28 +194,14 @@ if SwitchUDN:
                     newsContent   str(div)[:pos-1]
                     break
 
-        flagPlace   False
-        flagPerson   False
-        flagIssue   False
-        keywords   []
+        keywords   isRelatedNews(newsContent)
 
-        for place in places:
-            if place in newsContent:
-                flagPlace   True
-                keywords.append(place)
-        for person in persons:
-            if person in newsContent:
-                flagPerson   True
-                keywords.append(person)
-        for issue in issues:
-            if issue in newsContent:
-                flagIssue   True
-                keywords.append(issue)
-
-        if flagPlace or flagIssue or (flagPlace and flagPerson):
+        if len(keywords) !  0:
             print(newsTitle, "（聯合）")
             print(newsLink)
             print(keywords)
+
+
 
 #################################################################################
 
@@ -210,24 +214,13 @@ if SwitchCNA:
     driver.get(url)
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('ul', class_ "mainList imgModule")
-    time.sleep(1)
+    time.sleep(scrollDelay)
 
     counter   1
     for link in links[0]:
-        newsTitle   None
-        newsTime   None
-
-        if "https" not in link.contents[0]['href']:
-            newsLink   "https://cna.com.tw" + link.contents[0]['href']
-        else:
-            newsLink   link.contents[0]['href']
-
-        if len(link.contents[0].contents)    1:
-            newsTitle   link.contents[0].contents[0].contents[0].contents[0].contents[0]
-            newsTime   link.contents[0].contents[0].contents[1].contents[0]
-        else:
-            newsTitle   link.contents[0].contents[1].contents[0].contents[0].contents[0]
-            newsTime   link.contents[0].contents[1].contents[1].contents[0]
+        newsTime   link.find("div", class_ "date").contents[0]
+        newsLink   "https://cna.com.tw" + link.find("a")["href"]
+        newsTitle   str(link.find("span").contents[0])
 
         date_format   '%Y/%m/%d %H:%M'
         newsTimeObj   datetime.strptime(newsTime, date_format)
@@ -242,25 +235,9 @@ if SwitchCNA:
         contents   subSoup.find_all('p')
         newsContent   str(contents)
 
-        flagPlace   False
-        flagPerson   False
-        flagIssue   False
-        keywords   []
+        keywords   isRelatedNews(newsContent)
 
-        for place in places:
-            if place in newsContent:
-                flagPlace   True
-                keywords.append(place)
-        for person in persons:
-            if person in newsContent:
-                flagPerson   True
-                keywords.append(person)
-        for issue in issues:
-            if issue in newsContent:
-                flagIssue   True
-                keywords.append(issue)
-
-        if flagPlace or flagIssue or (flagPlace and flagPerson):
+        if len(keywords) !  0:
             print(newsTitle, "（中央社）")
             print(newsLink)
             print(keywords)
@@ -275,27 +252,28 @@ if SwitchET:
 
     driver.get(url)
     soup   BeautifulSoup(driver.page_source,"html.parser")
-    links   soup.find_all('div', class_ "part_list_2")
-    time.sleep(1)
+    links   soup.find_all('div', class_ "part_list_2")[0].findAll("h3")
+    time.sleep(scrollDelay)
 
     counter   1
-    for link in links[0].contents:
-        newsTitle   None
-        newsTime   None
 
-        if link    '\n':
-            continue
-        
-        newsTime   str(link.contents[0].contents[0])
-        newsTitle   str(link.contents[2].contents[0])
-        newsLink   str(link.contents[2]['href'])
+    for link in links:
+        newsTime   str(link.find("span", class_ "date").contents[0])
+
+        newsTitle   link.find("a")
+        if len(newsTitle)    2:
+            newsTitle   newsTitle.contents[1]
+        else:
+            newsTitle   newsTitle.contents[0]
+
+        newsLink   str(link.find("a")["href"])
 
         date_format   '%Y/%m/%d %H:%M'
         newsTimeObj   datetime.strptime(newsTime, date_format)
         if newsTimeObj < earlier:
             break
 
-        # print(str(counter) + " " + newsTime)
+        print(str(counter) + " " + newsTime)
         counter +  1
 
         subResult   requests.get(newsLink)
@@ -328,7 +306,7 @@ if SwitchET:
             print(newsLink)
             print(keywords)
 
-        if counter > 100:
+        if counter > 70:
             break
 
 
@@ -342,11 +320,11 @@ if SwitchApple:
 
     driver.get(url)
     for x in range(0, scrollPages):
-        time.sleep(5)
+        time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('article', class_ "post-style3 infScroll postCount")
-    time.sleep(1)
+    time.sleep(scrollDelay)
 
     counter   1
     for link in links:
@@ -383,28 +361,9 @@ if SwitchApple:
         newsContent +  newsContents[0].findAll("figcaption")
         newsContent   str(newsContent)
 
-        flagPlace   False
-        flagPerson   False
-        flagIssue   False
-        keywords   []
+        keywords   isRelatedNews(str(newsContent))
 
-        for place in places:
-            if place in str(newsContent):
-                flagPlace   True
-                keywords.append(place)
-                break
-        for person in persons:
-            if person in str(newsContent):
-                flagPerson   True
-                keywords.append(person)
-                break
-        for issue in issues:
-            if issue in str(newsContent):
-                flagIssue   True
-                keywords.append(issue)       
-                break
-
-        if flagPlace or flagIssue or (flagPlace and flagPerson):
+        if len(keywords) !  0:
             print(newsTitle, "(壹蘋新聞網)")
             print(newsLink)
             print(keywords)
