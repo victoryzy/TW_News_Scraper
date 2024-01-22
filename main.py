@@ -13,11 +13,11 @@ from datetime import datetime, timedelta
 """
 #############################################################
 # 0   不爬文 ;  1   爬文
-SwitchLTN       1   # 自由時報 (沒有日期資訊)
-SwitchUDN       1   # 聯合新聞網
-SwitchCNA       1   # 中央社
-SwitchET        1   # ETtoday
-SwitchApple     1   # 壹蘋新聞網
+SwitchLTN       0   # 自由時報 (沒有日期資訊)
+SwitchUDN       0   # 聯合新聞網
+SwitchCNA       0   # 中央社
+SwitchET        0   # ETtoday
+SwitchApple     0   # 壹蘋新聞網
 
 SwitchSET       0   # 三立新聞網  https://setn.com/viewall.aspx             可爬，滾動加載，不確定會不會被擋
 SwitchMIRROR    0   # 鏡週刊     https://mirrormedia.mg/category/news      可爬，滾動加載，不確定會不會被擋
@@ -30,10 +30,10 @@ SwitchTVBS      0   # TVBS https://news.tvbs.com.tw/realtime 可爬，滾動加�
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   2   
-timeSlot      1   # 收集幾個小時內的新聞
+scrollPages   3   
+timeSlot      1.5   # 收集幾個小時內的新聞
 
-scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   2   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "訓練中心", "竹塹"]
 persons   ["立委", "市長", "議員", "高虹安", "高市長", 
@@ -155,20 +155,33 @@ if SwitchUDN:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(scrollDelay)
     soup   BeautifulSoup(driver.page_source,"html.parser")
-    links   soup.find_all('div', class_ "story-list__news")
+    links   soup.find_all('div', class_ "story-list__text")
 
     counter   1
     for link in links:
+        newsTitle   None
+        newsTime   None
+        newsLink   None
+        
         if "猜你喜歡" in str(link):
+            print("                                            ")
             print("跳過「猜你喜歡」部分的新聞，離開聯合新聞網。")
+            print("                                            ")
             break
 
-        titleAndLink   link.find("h2").find("a")
-        newsTitle   str(titleAndLink["title"])
-        newsLink   "https://udn.com" + str(titleAndLink["href"]).replace("?from udn-ch1_breaknews-1-0-news", "")
+        tagAs   link.findAll("a")
+        for tag in tagAs:
+            if tag.has_attr("title"):
+                newsTitle   str(tag["title"])
+                newsLink   "https://udn.com" + str(tag["href"])
+                newsLink   newsLink.replace("?from udn-ch1_breaknews-1-0-news", "")
 
-        newsTimeList   link.find("time", class_ "story-list__time").contents
-        newsTime   re.search("\d{4}-\d{2}-\d{2} \d{2}:\d{2}", str(newsTimeList)).group(0)
+        newsTime   link.find("div", class_ "story-list__info")
+        newsTime   newsTime.find("time", class_ "story-list__time").contents
+        if len(newsTime)    1:
+            newsTime   str(newsTime[0])
+        else:
+            newsTime   str(newsTime[1]) # Skip comment in html
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -183,7 +196,7 @@ if SwitchUDN:
         counter +  1
 
         newsContent   ""
-        for content in contents[0]:     ## bug here
+        for content in contents[0]:     ## bug here, may not appear every time
             if isinstance(content, Tag):
                 div   content.find("div", class_   "article-content__paragraph")
                 if div is not None:
@@ -200,7 +213,6 @@ if SwitchUDN:
             print(newsTitle, "（聯合）")
             print(newsLink)
             print(keywords)
-
 
 
 #################################################################################
@@ -241,6 +253,7 @@ if SwitchCNA:
             print(newsTitle, "（中央社）")
             print(newsLink)
             print(keywords)
+
 
 #################################################################################
 
