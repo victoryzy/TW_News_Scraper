@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 1. 有些網站新聞的時間沒有日期資訊，假如跨日的話可能會算錯時間，再想想要修改還是當作限制。
 2. (Done)判斷是否要抓的條件可以寫成function，input是字串，output是bool 
 3. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
+4. 三立的時間只有日期和時間，沒有年份資訊。
 """
 #############################################################
 # 0   不爬文 ;  1   爬文
@@ -18,8 +19,8 @@ SwitchUDN       0   # 聯合新聞網
 SwitchCNA       0   # 中央社
 SwitchET        0   # ETtoday
 SwitchApple     0   # 壹蘋新聞網
+SwitchSET       0   # 三立新聞網 
 
-SwitchSET       0   # 三立新聞網  https://setn.com/viewall.aspx             可爬，滾動加載，不確定會不會被擋
 SwitchMIRROR    0   # 鏡週刊     https://mirrormedia.mg/category/news      可爬，滾動加載，不確定會不會被擋
 SwitchNOWNEWS   0   # NOWNEWS   https://nownews.com/cat/breaking          可爬，需要按按鍵加載，不確定會不會被擋
 SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime           可爬，需換頁加載，不確定會不會被擋
@@ -30,8 +31,8 @@ SwitchTVBS      0   # TVBS https://news.tvbs.com.tw/realtime 可爬，滾動加�
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   3   
-timeSlot      1.5   # 收集幾個小時內的新聞
+scrollPages   2   
+timeSlot      2   # 收集幾個小時內的新聞
 
 scrollDelay   2   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -132,12 +133,11 @@ if SwitchLTN:
                 break
         
         newsContent2   str(newsContent2)
-
         keywords   isRelatedNews(newsContent2)
 
         if len(keywords) !  0:
-            print(link['title'], "（自由）")
-            print(link['href'])
+            print(newsTitle, "（自由）")
+            print(newsLink)
             print(keywords)
 
 
@@ -378,6 +378,64 @@ if SwitchApple:
 
         if len(keywords) !  0:
             print(newsTitle, "(壹蘋新聞網)")
+            print(newsLink)
+            print(keywords)
+
+        if counter > 50:
+            break
+
+#################################################################################
+        
+if SwitchSET:
+    url   "https://setn.com/viewall.aspx"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
+
+    driver.get(url)
+    for x in range(0, scrollPages):
+        time.sleep(scrollDelay)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(scrollDelay)
+    soup   BeautifulSoup(driver.page_source,"html.parser")
+
+    links   soup.find_all("div", class_ "col-sm-12 newsItems")
+
+    counter   1
+    for link in links:
+        linkAndTitle   link.find("a", class_ "gt")
+        newsLink   str(linkAndTitle["href"])
+        if "https" not in str(linkAndTitle["href"]):
+            newsLink   "https://setn.com" + str(linkAndTitle["href"])
+        
+        newsLink   newsLink.replace("&utm_campaign viewallnews", "")
+        newsLink   newsLink.replace("?utm_campaign viewallnews", "")
+        newsTitle   str(linkAndTitle.contents[0])
+
+        subResult   requests.get(newsLink)
+        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        newsTime   subSoup.find("time", class_ "page_date")
+
+        date_format   "%Y/%m/%d %H:%M"
+        if newsTime is None:
+            newsTime   subSoup.find("time")
+            newsTimeStr   str(newsTime.contents[0])
+        else:
+            newsTimeStr   str(newsTime.contents[0])[:-3]
+
+        newsTimeObj   datetime.strptime(newsTimeStr, date_format)
+        if newsTimeObj < earlier:
+            break
+
+        print(str(counter) + "  " + newsTimeStr)
+        counter +  1
+
+        newsContent   subSoup.find_all('p')
+        newsContent   str(newsContent)
+
+        keywords   isRelatedNews(newsContent)
+
+        if len(keywords) !  0:
+            print(newsTitle, "（三立）")
             print(newsLink)
             print(keywords)
 
