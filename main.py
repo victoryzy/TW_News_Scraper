@@ -20,18 +20,18 @@ SwitchCNA       0   # 中央社
 SwitchET        0   # ETtoday
 SwitchApple     0   # 壹蘋新聞網
 SwitchSET       0   # 三立新聞網 
+SwitchMIRROR    0   # 鏡週刊
 
-SwitchMIRROR    0   # 鏡週刊     https://mirrormedia.mg/category/news      可爬，滾動加載，不確定會不會被擋
+SwitchTVBS      0   # TVBS https://news.tvbs.com.tw/realtime 可爬，滾動加載，不確定會不會被擋，新聞時間要點進去看
 SwitchNOWNEWS   0   # NOWNEWS   https://nownews.com/cat/breaking          可爬，需要按按鍵加載，不確定會不會被擋
 SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime           可爬，需換頁加載，不確定會不會被擋
 SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新           可爬，需換頁加載，不確定會不會被擋
 
-SwitchTVBS      0   # TVBS https://news.tvbs.com.tw/realtime 可爬，滾動加載，不確定會不會被擋，新聞時間要點進去看
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   2   
+scrollPages   3   
 timeSlot      2   # 收集幾個小時內的新聞
 
 scrollDelay   2   # 模擬滑鼠滾輪往下滾的間隔時間
@@ -140,7 +140,6 @@ if SwitchLTN:
             print(newsLink)
             print(keywords)
 
-
 #################################################################################
 
 # 聯合新聞網 即時新聞
@@ -214,7 +213,6 @@ if SwitchUDN:
             print(newsLink)
             print(keywords)
 
-
 #################################################################################
 
 # 中央社 即時新聞列表
@@ -253,7 +251,6 @@ if SwitchCNA:
             print(newsTitle, "（中央社）")
             print(newsLink)
             print(keywords)
-
 
 #################################################################################
 
@@ -322,7 +319,6 @@ if SwitchET:
         if counter > 70:
             break
 
-
 #################################################################################
 
 # 壹蘋新聞網 最新新聞列表
@@ -385,7 +381,8 @@ if SwitchApple:
             break
 
 #################################################################################
-        
+
+# 三立新聞 新聞總覽
 if SwitchSET:
     url   "https://setn.com/viewall.aspx"
     now   datetime.now()
@@ -441,3 +438,71 @@ if SwitchSET:
 
         if counter > 50:
             break
+
+#################################################################################
+
+# 鏡新聞 焦點新聞列表  
+if SwitchMIRROR:
+    url   "https://mirrormedia.mg/category/news"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
+
+    driver.get(url)
+    for x in range(0, scrollPages):
+        time.sleep(scrollDelay)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(scrollDelay)
+    soup   BeautifulSoup(driver.page_source,"html.parser")
+
+    links   soup.find_all("a", target "_blank")
+
+    counter   1
+    for link in links:
+        newsLink   None
+        newsTitle   None
+        newsTime   None
+
+        divs   link.find_all("div")
+        for div in divs:
+            if div.has_attr("class"):
+                if "article-list-item__ItemTitle-sc" in str(div["class"]):
+                    newsTitle   str(div.contents[0])
+                    newsLink   "https://mirrormedia.mg" + str(link["href"])
+        if newsLink is None:
+            continue
+
+        subResult   requests.get(newsLink)
+        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        divs   subSoup.find_all("div")
+        for div in divs:
+            if div.has_attr("class"):
+                if "normal__SectionAndDate-sc" in str(div["class"]):
+                    newsTime   str(div.contents[1].contents[0])
+
+        if newsTime is None:
+            newsTimes   subSoup.find_all("p")
+            for p in newsTimes:
+                if p.has_attr("class"):
+                    if "date__DateText-sc" in str(p["class"]):
+                        newsTime   str(p.contents[2])
+                        break
+
+        date_format   "%Y.%m.%d %H:%M"
+        newsTimeObj   datetime.strptime(newsTime, date_format)
+        if newsTimeObj < earlier:
+            break
+
+        print(str(counter) + "  " + newsTime)
+        counter +  1
+
+        newsContents   subSoup.find_all("span", {"data-text":"true"})
+        newsContent   ""
+        for content in newsContents:
+            newsContent +  str(content.contents[0])
+
+        keywords   isRelatedNews(newsContent)
+
+        if len(keywords) !  0:
+            print(newsTitle, "（鏡新聞）")
+            print(newsLink)
+            print(keywords)
