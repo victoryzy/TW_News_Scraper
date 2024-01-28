@@ -21,8 +21,8 @@ SwitchET        0   # ETtoday
 SwitchApple     0   # 壹蘋新聞網
 SwitchSET       0   # 三立新聞網 
 SwitchMIRROR    0   # 鏡週刊
+SwitchTVBS      0   # TVBS 
 
-SwitchTVBS      0   # TVBS https://news.tvbs.com.tw/realtime 可爬，滾動加載，不確定會不會被擋，新聞時間要點進去看
 SwitchNOWNEWS   0   # NOWNEWS   https://nownews.com/cat/breaking          可爬，需要按按鍵加載，不確定會不會被擋
 SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime           可爬，需換頁加載，不確定會不會被擋
 SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新           可爬，需換頁加載，不確定會不會被擋
@@ -31,10 +31,10 @@ SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新           可
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   3   
-timeSlot      2   # 收集幾個小時內的新聞
+scrollPages   1   
+timeSlot      1.5   # 收集幾個小時內的新聞
 
-scrollDelay   2   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "訓練中心", "竹塹"]
 persons   ["立委", "市長", "議員", "高虹安", "高市長", 
@@ -504,5 +504,55 @@ if SwitchMIRROR:
 
         if len(keywords) !  0:
             print(newsTitle, "（鏡新聞）")
+            print(newsLink)
+            print(keywords)
+
+#################################################################################
+
+# TVBS 即時新聞列表  
+if SwitchTVBS:
+    url   "https://news.tvbs.com.tw/realtime"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
+
+    driver.get(url)
+    for x in range(0, scrollPages):
+        time.sleep(scrollDelay)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(scrollDelay)
+    soup   BeautifulSoup(driver.page_source,"html.parser")
+
+    links   soup.find_all("li")
+
+    counter   1
+    for link in links:
+        if link.find("a") is None or link.find("div", class_ "time") is None:
+            continue
+
+        newsLink   "https://news.tvbs.com.tw" + str(link.find("a")["href"])
+        newsTitle   str(link.find("h2").contents[0])
+
+        subResult   requests.get(newsLink)
+        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+        authorAndTime   subSoup.find_all("div", class_ "author")
+        authorAndTime   str(authorAndTime[0])
+        times   re.findall("\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", authorAndTime)
+        newsTime   str(times[0])
+
+        date_format   "%Y/%m/%d %H:%M"
+        newsTimeObj   datetime.strptime(newsTime, date_format)
+        if newsTimeObj < earlier:
+            break
+
+        print(str(counter) + "  " + newsTime)
+        counter +  1
+
+        newsContents   subSoup.find_all("div", class_ "article_content", id "news_detail_div")
+        newsContents   str(newsContents)
+        keywords   isRelatedNews(newsContents)
+
+        if len(keywords) !  0:
+            print(newsTitle, "（TVBS）")
             print(newsLink)
             print(keywords)
