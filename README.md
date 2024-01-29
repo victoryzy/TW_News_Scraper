@@ -7,7 +7,10 @@ News scraper for HCFB
 * 中央社
 * ETtoday
 * 壹蘋新聞網
+* 三立新聞網 
+* 鏡週刊
+* TVBS 
+* NOWNEWS
 
 ## TODO
-* 改掉regular expression和list index找newsTime/newsTitle/newsLink的寫法，bs4.Element.Tag可以參考壹蘋新聞網的寫法，應該比較robust(?
-
+* 

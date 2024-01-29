@@ -8,10 +8,7 @@ from selenium.webdriver.common.by import By
 
 #############################################################
 """
-1. 有些網站新聞的時間沒有日期資訊，假如跨日的話可能會算錯時間，再想想要修改還是當作限制。
-2. (Done)判斷是否要抓的條件可以寫成function，input是字串，output是bool 
-3. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
-4. 三立的時間只有日期和時間，沒有年份資訊。
+1. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
 """
 #############################################################
 # 0   不爬文 ;  1   爬文
@@ -103,19 +100,28 @@ def isInTimeRange(newsTime, dateFormat, earlier):
         return False
     return True
 
-#################################################################################
-
-# 自由時報 即時新聞總覽
-if SwitchLTN:
-    url   "https://news.ltn.com.tw/list/breakingnews"
-    earlier   datetime.now() - timedelta(hours timeSlot)
-
+def getSoupFromURL(url, scrollPages, scrollDelay):
     driver.get(url)
     for x in range(0, scrollPages):
         time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(scrollDelay)
     soup   BeautifulSoup(driver.page_source,"html.parser")
+    return soup
+
+def printResult(newsTitle, source, newsLink, keywords):
+    print(str(newsTitle), source)
+    print(newsLink)
+    print(keywords)
+
+#################################################################################
+
+# 自由時報 即時新聞總覽
+if SwitchLTN:
+    earlier   datetime.now() - timedelta(hours timeSlot)
+
+    url   "https://news.ltn.com.tw/list/breakingnews"
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
     links   soup.find_all('a', class_ "tit")
 
     counter   1
@@ -150,27 +156,19 @@ if SwitchLTN:
             else:
                 break
         
-        newsContent2   str(newsContent2)
-        keywords   isRelatedNews(newsContent2)
+        keywords   isRelatedNews(str(newsContent2))
 
         if len(keywords) !  0:
-            print(newsTitle, "（自由）")
-            print(newsLink)
-            print(keywords)
+            printResult(newsTitle, "（自由）", newsLink, keywords)
 
 #################################################################################
 
 # 聯合新聞網 即時新聞
 if SwitchUDN:
-    url   "https://udn.com/news/breaknews"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    for x in range(0, scrollPages):
-        time.sleep(scrollDelay)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(scrollDelay)
-    soup   BeautifulSoup(driver.page_source,"html.parser")
+    url   "https://udn.com/news/breaknews"
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
     links   soup.find_all('div', class_ "story-list__text")
 
     counter   1
@@ -224,21 +222,17 @@ if SwitchUDN:
         keywords   isRelatedNews(newsContent)
 
         if len(keywords) !  0:
-            print(newsTitle, "（聯合）")
-            print(newsLink)
-            print(keywords)
+            printResult(newsTitle, "（聯合）", newsLink, keywords)
 
 #################################################################################
 
 # 中央社 即時新聞列表
 if SwitchCNA:
-    url   "https://cna.com.tw/list/aall.aspx"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    soup   BeautifulSoup(driver.page_source,"html.parser")
+    url   "https://cna.com.tw/list/aall.aspx"
+    soup   getSoupFromURL(url, 0, scrollDelay)
     links   soup.find_all('ul', class_ "mainList imgModule")
-    time.sleep(scrollDelay)
 
     counter   1
     for link in links[0]:
@@ -254,30 +248,24 @@ if SwitchCNA:
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
-        contents   subSoup.find_all('p')
-        newsContent   str(contents)
+        newsContent   subSoup.find_all('p')
 
-        keywords   isRelatedNews(newsContent)
+        keywords   isRelatedNews(str(newsContent))
 
         if len(keywords) !  0:
-            print(newsTitle, "（中央社）")
-            print(newsLink)
-            print(keywords)
+            printResult(newsTitle, "（中央社）", newsLink, keywords)
 
 #################################################################################
 
 # ETtoday 新聞總覽
 if SwitchET:
-    url   "https://ettoday.net/news/news-list.htm"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    soup   BeautifulSoup(driver.page_source,"html.parser")
+    url   "https://ettoday.net/news/news-list.htm"
+    soup   getSoupFromURL(url, 0, scrollDelay)
     links   soup.find_all('div', class_ "part_list_2")[0].findAll("h3")
-    time.sleep(scrollDelay)
 
     counter   1
-
     for link in links:
         newsTime   str(link.find("span", class_ "date").contents[0])
 
@@ -321,27 +309,17 @@ if SwitchET:
                     keywords.add(issue)
 
         if flagPlace or flagIssue or (flagPlace and flagPerson):
-            print(newsTitle, "(ETtoday)")
-            print(newsLink)
-            print(keywords)
-
-        if counter > 70:
-            break
+            printResult(newsTitle, "(ETtoday)", newsLink, keywords)
 
 #################################################################################
 
 # 壹蘋新聞網 最新新聞列表
 if SwitchApple:
-    url   "https://tw.nextapple.com/realtime/latest"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    for x in range(0, scrollPages):
-        time.sleep(scrollDelay)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    soup   BeautifulSoup(driver.page_source,"html.parser")
+    url   "https://tw.nextapple.com/realtime/latest"
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
     links   soup.find_all('article', class_ "post-style3 infScroll postCount")
-    time.sleep(scrollDelay)
 
     counter   1
     for link in links:
@@ -374,32 +352,20 @@ if SwitchApple:
         newsContent   subSoup.find_all("blockquote")
         newsContent +  newsContents[0].findAll("p")
         newsContent +  newsContents[0].findAll("figcaption")
-        newsContent   str(newsContent)
 
         keywords   isRelatedNews(str(newsContent))
 
         if len(keywords) !  0:
-            print(newsTitle, "(壹蘋新聞網)")
-            print(newsLink)
-            print(keywords)
-
-        if counter > 50:
-            break
+            printResult(newsTitle, "(壹蘋新聞網)", newsLink, keywords)
 
 #################################################################################
 
 # 三立新聞 新聞總覽
 if SwitchSET:
-    url   "https://setn.com/viewall.aspx"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    for x in range(0, scrollPages):
-        time.sleep(scrollDelay)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(scrollDelay)
-    soup   BeautifulSoup(driver.page_source,"html.parser")
-
+    url   "https://setn.com/viewall.aspx"
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
     links   soup.find_all("div", class_ "col-sm-12 newsItems")
 
     counter   1
@@ -419,6 +385,17 @@ if SwitchSET:
 
         if newsTime is None:
             newsTime   subSoup.find("time")
+
+            """
+            BUG:
+            https://travel.setn.com/News/1420260
+            這個頁面內的時間不是<time>而是<div>，所以兩個找不同的tag都找不到。
+            而且只有年月日沒有時間，時間要從外面的列表看。
+            Walkaround: just skip
+            """
+            if newsTime is None:
+                continue
+
             newsTimeStr   str(newsTime.contents[0])
         else:
             newsTimeStr   str(newsTime.contents[0])[:-3]
@@ -430,32 +407,20 @@ if SwitchSET:
         counter +  1
 
         newsContent   subSoup.find_all('p')
-        newsContent   str(newsContent)
 
-        keywords   isRelatedNews(newsContent)
+        keywords   isRelatedNews(str(newsContent))
 
         if len(keywords) !  0:
-            print(newsTitle, "（三立）")
-            print(newsLink)
-            print(keywords)
-
-        if counter > 50:
-            break
+            printResult(newsTitle, "（三立）", newsLink, keywords)
 
 #################################################################################
 
 # 鏡新聞 焦點新聞列表  
 if SwitchMIRROR:
-    url   "https://mirrormedia.mg/category/news"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    for x in range(0, scrollPages):
-        time.sleep(scrollDelay)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(scrollDelay)
-    soup   BeautifulSoup(driver.page_source,"html.parser")
-
+    url   "https://mirrormedia.mg/category/news"
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
     links   soup.find_all("a", target "_blank")
 
     counter   1
@@ -503,24 +468,16 @@ if SwitchMIRROR:
         keywords   isRelatedNews(newsContent)
 
         if len(keywords) !  0:
-            print(newsTitle, "（鏡新聞）")
-            print(newsLink)
-            print(keywords)
+            printResult(newsTitle, "（鏡新聞）", newsLink, keywords)
 
 #################################################################################
 
 # TVBS 即時新聞列表  
 if SwitchTVBS:
-    url   "https://news.tvbs.com.tw/realtime"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
-    driver.get(url)
-    for x in range(0, scrollPages):
-        time.sleep(scrollDelay)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(scrollDelay)
-    soup   BeautifulSoup(driver.page_source,"html.parser")
-
+    url   "https://news.tvbs.com.tw/realtime"
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
     links   soup.find_all("li")
 
     counter   1
@@ -546,21 +503,18 @@ if SwitchTVBS:
         counter +  1
 
         newsContents   subSoup.find_all("div", class_ "article_content", id "news_detail_div")
-        newsContents   str(newsContents)
-        keywords   isRelatedNews(newsContents)
+        keywords   isRelatedNews(str(newsContents))
 
         if len(keywords) !  0:
-            print(newsTitle, "（TVBS）")
-            print(newsLink)
-            print(keywords)
+            printResult(newsTitle, "（TVBS）", newsLink, keywords)
 
 #################################################################################
 
 # NOWNEWS 即時新聞
 if SwitchNOWNEWS:
-    url   "https://nownews.com/cat/breaking"
     earlier   datetime.now() - timedelta(hours timeSlot)
 
+    url   "https://nownews.com/cat/breaking"
     driver.get(url)
     nextPageButton   driver.find_element(By.ID, "moreNews")
     for x in range(0, scrollPages+1):
@@ -570,7 +524,6 @@ if SwitchNOWNEWS:
         nextPageButton.click()
     time.sleep(scrollDelay)
     soup   BeautifulSoup(driver.page_source,"html.parser")
-
     links   soup.find_all("ul", id "ulNewsList")
 
     counter   1
@@ -610,6 +563,4 @@ if SwitchNOWNEWS:
         keywords   isRelatedNews(contentStr)
 
         if len(keywords) !  0:
-            print(newsTitle, "（NOWNEWS）")
-            print(newsLink)
-            print(keywords)
+            printResult(newsTitle, "（NOWNEWS）", newsLink, keywords)
