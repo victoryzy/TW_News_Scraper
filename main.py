@@ -32,8 +32,8 @@ SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新     可爬，
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   3   
-timeSlot      2   # 收集幾個小時內的新聞
+scrollPages   1   
+timeSlot      1   # 收集幾個小時內的新聞
 
 scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -59,7 +59,7 @@ issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
                "亡", "命危", "OHCA", "無生命跡象", "中毒", "不治",
                "任務結束", "無呼吸心跳", "受困", "罹難", "受傷", 
                "昏迷", "無意識"]
-#############################################################
+#################################################################################
 
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
 
@@ -71,7 +71,6 @@ opt.add_argument("--disable-notifications")
 driver   webdriver.Chrome(options opt)
 
 #################################################################################
-
 
 def isRelatedNews(content):
     flagPlace   False
@@ -104,11 +103,12 @@ def isInTimeRange(newsTime, dateFormat, earlier):
         return False
     return True
 
+#################################################################################
+
 # 自由時報 即時新聞總覽
 if SwitchLTN:
     url   "https://news.ltn.com.tw/list/breakingnews"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     for x in range(0, scrollPages):
@@ -120,17 +120,28 @@ if SwitchLTN:
 
     counter   1
     for link in links:
-        newsTime   str(link.find("span", class_ "time").contents[0])
         newsTitle   str(link.find("h3", class_ "title").contents[0])
         newsLink   str(link['href'])
 
-        print(str(counter) + "  " + newsTime)
-        counter +  1
-        
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
         newsContent   subSoup.find_all('p')
+
+        newsTimes   subSoup.find_all("span", class_ "time")
+        if len(newsTimes)    0:
+            newsTimes   subSoup.find_all("time", class_ "time")
+        newsTimeString   ""
+        for sting_ in newsTimes:
+            newsTimeString +  str(sting_.contents)
+        times   re.findall("\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsTimeString)
+        newsTime   str(times[0])
+
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            break
+
+        print(str(counter) + "  " + newsTime)
+        counter +  1
 
         newsContent2   []
         for content in newsContent:
@@ -152,8 +163,7 @@ if SwitchLTN:
 # 聯合新聞網 即時新聞
 if SwitchUDN:
     url   "https://udn.com/news/breaknews"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     for x in range(0, scrollPages):
@@ -223,8 +233,7 @@ if SwitchUDN:
 # 中央社 即時新聞列表
 if SwitchCNA:
     url   "https://cna.com.tw/list/aall.aspx"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     soup   BeautifulSoup(driver.page_source,"html.parser")
@@ -260,8 +269,7 @@ if SwitchCNA:
 # ETtoday 新聞總覽
 if SwitchET:
     url   "https://ettoday.net/news/news-list.htm"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     soup   BeautifulSoup(driver.page_source,"html.parser")
@@ -325,8 +333,7 @@ if SwitchET:
 # 壹蘋新聞網 最新新聞列表
 if SwitchApple:
     url   "https://tw.nextapple.com/realtime/latest"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     for x in range(0, scrollPages):
@@ -384,8 +391,7 @@ if SwitchApple:
 # 三立新聞 新聞總覽
 if SwitchSET:
     url   "https://setn.com/viewall.aspx"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     for x in range(0, scrollPages):
@@ -441,8 +447,7 @@ if SwitchSET:
 # 鏡新聞 焦點新聞列表  
 if SwitchMIRROR:
     url   "https://mirrormedia.mg/category/news"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     for x in range(0, scrollPages):
@@ -507,8 +512,7 @@ if SwitchMIRROR:
 # TVBS 即時新聞列表  
 if SwitchTVBS:
     url   "https://news.tvbs.com.tw/realtime"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     for x in range(0, scrollPages):
@@ -555,8 +559,7 @@ if SwitchTVBS:
 # NOWNEWS 即時新聞
 if SwitchNOWNEWS:
     url   "https://nownews.com/cat/breaking"
-    now   datetime.now()
-    earlier   now - timedelta(hours timeSlot)
+    earlier   datetime.now() - timedelta(hours timeSlot)
 
     driver.get(url)
     nextPageButton   driver.find_element(By.ID, "moreNews")
