@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from datetime import datetime, timedelta
+from selenium.webdriver.common.by import By
 
 #############################################################
 """
@@ -22,17 +23,17 @@ SwitchApple     0   # 壹蘋新聞網
 SwitchSET       0   # 三立新聞網 
 SwitchMIRROR    0   # 鏡週刊
 SwitchTVBS      0   # TVBS 
+SwitchNOWNEWS   0   # NOWNEWS
 
-SwitchNOWNEWS   0   # NOWNEWS   https://nownews.com/cat/breaking          可爬，需要按按鍵加載，不確定會不會被擋
-SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime           可爬，需換頁加載，不確定會不會被擋
-SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新           可爬，需換頁加載，不確定會不會被擋
+SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
+SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新     可爬，需換頁加載，不確定會不會被擋
 
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   1   
-timeSlot      1.5   # 收集幾個小時內的新聞
+scrollPages   3   
+timeSlot      2   # 收集幾個小時內的新聞
 
 scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -66,7 +67,7 @@ opt   webdriver.ChromeOptions()
 
 # [TODO] 要判斷作業系統加不同的argument
 opt.add_argument("user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
-
+opt.add_argument("--disable-notifications")
 driver   webdriver.Chrome(options opt)
 
 #################################################################################
@@ -96,6 +97,12 @@ def isRelatedNews(content):
         return keywords
     else:
         return []
+
+def isInTimeRange(newsTime, dateFormat, earlier):
+    newsTimeObj   datetime.strptime(newsTime, dateFormat)
+    if newsTimeObj < earlier:
+        return False
+    return True
 
 # 自由時報 即時新聞總覽
 if SwitchLTN:
@@ -186,9 +193,7 @@ if SwitchUDN:
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
         contents   subSoup.find_all('section', class_ "article-content__wrapper")
 
-        date_format   "%Y-%m-%d %H:%M"
-        newsTimeObj   datetime.strptime(newsTime, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
         print(str(counter) + " " + str(newsTime))
@@ -232,9 +237,7 @@ if SwitchCNA:
         newsLink   "https://cna.com.tw" + link.find("a")["href"]
         newsTitle   str(link.find("span").contents[0])
 
-        date_format   '%Y/%m/%d %H:%M'
-        newsTimeObj   datetime.strptime(newsTime, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
         print(str(counter) + " " + newsTime)
@@ -278,9 +281,7 @@ if SwitchET:
 
         newsLink   str(link.find("a")["href"])
 
-        date_format   '%Y/%m/%d %H:%M'
-        newsTimeObj   datetime.strptime(newsTime, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
         print(str(counter) + " " + newsTime)
@@ -354,9 +355,7 @@ if SwitchApple:
                 if link_ is not None:
                     newsLink   str(link_["href"])
 
-        date_format   '%Y/%m/%d %H:%M'
-        newsTimeObj   datetime.strptime(newsTime, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
         print(str(counter) + " " + newsTime)
@@ -412,15 +411,13 @@ if SwitchSET:
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
         newsTime   subSoup.find("time", class_ "page_date")
 
-        date_format   "%Y/%m/%d %H:%M"
         if newsTime is None:
             newsTime   subSoup.find("time")
             newsTimeStr   str(newsTime.contents[0])
         else:
             newsTimeStr   str(newsTime.contents[0])[:-3]
 
-        newsTimeObj   datetime.strptime(newsTimeStr, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTimeStr, "%Y/%m/%d %H:%M", earlier):
             break
 
         print(str(counter) + "  " + newsTimeStr)
@@ -487,9 +484,7 @@ if SwitchMIRROR:
                         newsTime   str(p.contents[2])
                         break
 
-        date_format   "%Y.%m.%d %H:%M"
-        newsTimeObj   datetime.strptime(newsTime, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTime, "%Y.%m.%d %H:%M", earlier):
             break
 
         print(str(counter) + "  " + newsTime)
@@ -540,9 +535,7 @@ if SwitchTVBS:
         times   re.findall("\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", authorAndTime)
         newsTime   str(times[0])
 
-        date_format   "%Y/%m/%d %H:%M"
-        newsTimeObj   datetime.strptime(newsTime, date_format)
-        if newsTimeObj < earlier:
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
         print(str(counter) + "  " + newsTime)
@@ -554,5 +547,66 @@ if SwitchTVBS:
 
         if len(keywords) !  0:
             print(newsTitle, "（TVBS）")
+            print(newsLink)
+            print(keywords)
+
+#################################################################################
+
+# NOWNEWS 即時新聞
+if SwitchNOWNEWS:
+    url   "https://nownews.com/cat/breaking"
+    now   datetime.now()
+    earlier   now - timedelta(hours timeSlot)
+
+    driver.get(url)
+    nextPageButton   driver.find_element(By.ID, "moreNews")
+    for x in range(0, scrollPages+1):
+        time.sleep(scrollDelay)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(scrollDelay)
+        nextPageButton.click()
+    time.sleep(scrollDelay)
+    soup   BeautifulSoup(driver.page_source,"html.parser")
+
+    links   soup.find_all("ul", id "ulNewsList")
+
+    counter   1
+    for link in links[0]:
+        if not isinstance(link, Tag):
+            continue
+        
+        newsTitle   str(link.find("h3").contents[0])
+        newsLink   str(link.find("a")["href"])
+        newsTime   str(link.find("p", class_ "time").contents[-1])
+
+        subResult   requests.get(newsLink)
+        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+        if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
+            break
+
+        print(str(counter) + "  " + newsTime)
+        counter +  1
+
+        newsBody   subSoup.find_all("article")  
+        if newsBody is None or len(newsBody)    0:
+            # 類似地震速報可能會被導到「頁面不存在」，直接跳過不處理
+            continue
+
+        newsContents   newsBody[0] # tag, should only have 1 result
+
+        contentStr   ""
+        for content in newsContents:
+            if content.name    "div":
+                if content.has_attr("class"):
+                    if str(content["class"][0])    "related-item":
+                        break
+
+            contentStr +  str(content)
+
+        keywords   isRelatedNews(contentStr)
+
+        if len(keywords) !  0:
+            print(newsTitle, "（NOWNEWS）")
             print(newsLink)
             print(keywords)
