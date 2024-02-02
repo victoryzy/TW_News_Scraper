@@ -1,30 +1,46 @@
 import re
+import os
+import sys
 import time
 import requests
-from bs4 import BeautifulSoup, Tag
+import pyperclip as pc
+from queue import Queue
 from selenium import webdriver
+from bs4 import BeautifulSoup, Tag
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 
 #############################################################
 """
 1. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
+
+
+Long-term feature:
+1. 某些新聞會有「發布時間」和「更新時間」，應該以發布時間為準，避免相同媒體在不同時間抓到相同的新聞。
+2. 舉例來說，「殺人罪」會因為「殺人」的關鍵字被抓到，但有罪行的新聞應該都不是事件發生當天的新聞，應該要想辦法避開。
+3. 某些媒體會針對新聞分類，例如：社會、娛樂、政治，可以考慮排除某些分類標籤的新聞。
+4. 
+
+
 """
 #############################################################
 # 0   不爬文 ;  1   爬文
-SwitchLTN       0   # 自由時報 (沒有日期資訊)
-SwitchUDN       0   # 聯合新聞網
-SwitchCNA       0   # 中央社
-SwitchET        0   # ETtoday
-SwitchApple     0   # 壹蘋新聞網
-SwitchSET       0   # 三立新聞網 
-SwitchMIRROR    0   # 鏡週刊
-SwitchTVBS      0   # TVBS 
-SwitchNOWNEWS   0   # NOWNEWS
+SwitchLTN       1   # 自由時報 (沒有日期資訊)
+SwitchUDN       1   # 聯合新聞網
+SwitchCNA       1   # 中央社
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
+SwitchSET       1   # 三立新聞網 
+SwitchMIRROR    1   # 鏡週刊
+SwitchTVBS      1   # TVBS 
+SwitchNOWNEWS   1   # NOWNEWS
 
-SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
 SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新     可爬，需換頁加載，不確定會不會被擋
+SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
 
+# 是否要印出新聞的編號與時間？ 要 True 不要 False
+printCounterTime   True 
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
@@ -35,7 +51,7 @@ timeSlot      1   # 收集幾個小時內的新聞
 scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "訓練中心", "竹塹"]
-persons   ["立委", "市長", "議員", "高虹安", "高市長", 
+persons   ["高虹安", "高市長", 
            "署長", "科長", "局長", "消防員", "替代役",
            "義消", "義警消", "分隊長", "小隊長", "大隊長", 
            "救護技術員", "EMT", "消促會", "工作權益促進會"]
@@ -53,22 +69,34 @@ issueGoods   ["AED", "住警器", "消防栓"]
 issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺", "珍惜生命"]
 issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
                "死者", "殉職", "失聯", "嗆暈", "意識模糊", "遺體", 
-               "亡", "命危", "OHCA", "無生命跡象", "中毒", "不治",
+               "命危", "OHCA", "無生命跡象", "中毒", "不治",
                "任務結束", "無呼吸心跳", "受困", "罹難", "受傷", 
                "昏迷", "無意識"]
+
+newsInfoQueue   Queue()
 #################################################################################
 
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
 
+driverPath   r"/usr/local/bin/chromedriver"
+service_   Service(executable_path driverPath)
+
 opt   webdriver.ChromeOptions()
 
-# [TODO] 要判斷作業系統加不同的argument
-opt.add_argument("user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+if sys.platform    "darwin":
+    # macos
+    opt.add_argument("user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+if sys.platform    "win32":
+    # windows
+    opt.add_argument("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+
 opt.add_argument("--disable-notifications")
-driver   webdriver.Chrome(options opt)
+opt.add_extension("/Users/victoryang/Library/Application Support/Google/Chrome/Default/Extensions/daocanafelgllopgddpchjaoldiinoob/1.1.0_0.crx")
+driver   webdriver.Chrome(service service_, options opt)
+
+programStartTime   datetime.now()
 
 #################################################################################
-
 def isRelatedNews(content):
     flagPlace   False
     flagPerson   False
@@ -113,11 +141,13 @@ def printResult(newsTitle, source, newsLink, keywords):
     print(str(newsTitle), source)
     print(newsLink)
     print(keywords)
+    newsInfoQueue.put((str(newsTitle) + source, newsLink))
 
 #################################################################################
 
 # 自由時報 即時新聞總覽
 if SwitchLTN:
+    print("         自由時報  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://news.ltn.com.tw/list/breakingnews"
@@ -146,8 +176,9 @@ if SwitchLTN:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        print(str(counter) + "  " + newsTime)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + "  " + newsTime)
+            counter +  1
 
         newsContent2   []
         for content in newsContent:
@@ -160,11 +191,13 @@ if SwitchLTN:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（自由）", newsLink, keywords)
+    print("         自由時報  結束              ")
 
 #################################################################################
 
 # 聯合新聞網 即時新聞
 if SwitchUDN:
+    print("         聯合新聞網  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://udn.com/news/breaknews"
@@ -204,8 +237,9 @@ if SwitchUDN:
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
-        print(str(counter) + " " + str(newsTime))
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + " " + str(newsTime))
+            counter +  1
 
         newsContent   ""
         for content in contents[0]:     ## bug here, may not appear every time
@@ -223,11 +257,13 @@ if SwitchUDN:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（聯合）", newsLink, keywords)
+    print("         聯合新聞網  結束              ")
 
 #################################################################################
 
 # 中央社 即時新聞列表
 if SwitchCNA:
+    print("         中央社  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://cna.com.tw/list/aall.aspx"
@@ -243,8 +279,9 @@ if SwitchCNA:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        print(str(counter) + " " + newsTime)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + " " + newsTime)
+            counter +  1
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -254,11 +291,13 @@ if SwitchCNA:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（中央社）", newsLink, keywords)
+    print("         中央社  結束              ")
 
 #################################################################################
 
 # ETtoday 新聞總覽
 if SwitchET:
+    print("         ETtoday  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://ettoday.net/news/news-list.htm"
@@ -280,8 +319,9 @@ if SwitchET:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        print(str(counter) + " " + newsTime)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + " " + newsTime)
+            counter +  1
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -310,11 +350,13 @@ if SwitchET:
 
         if flagPlace or flagIssue or (flagPlace and flagPerson):
             printResult(newsTitle, "(ETtoday)", newsLink, keywords)
+    print("         ETtoday  結束              ")
 
 #################################################################################
 
 # 壹蘋新聞網 最新新聞列表
 if SwitchApple:
+    print("         壹蘋新聞網  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://tw.nextapple.com/realtime/latest"
@@ -343,8 +385,9 @@ if SwitchApple:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        print(str(counter) + " " + newsTime)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + " " + newsTime)
+            counter +  1
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -357,11 +400,13 @@ if SwitchApple:
 
         if len(keywords) !  0:
             printResult(newsTitle, "(壹蘋新聞網)", newsLink, keywords)
+    print("         壹蘋新聞網  結束              ")
 
 #################################################################################
 
 # 三立新聞 新聞總覽
 if SwitchSET:
+    print("         三立新聞  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://setn.com/viewall.aspx"
@@ -403,8 +448,9 @@ if SwitchSET:
         if not isInTimeRange(newsTimeStr, "%Y/%m/%d %H:%M", earlier):
             break
 
-        print(str(counter) + "  " + newsTimeStr)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + "  " + newsTimeStr)
+            counter +  1
 
         newsContent   subSoup.find_all('p')
 
@@ -412,11 +458,13 @@ if SwitchSET:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（三立）", newsLink, keywords)
+    print("         三立新聞  結束              ")
 
 #################################################################################
 
 # 鏡新聞 焦點新聞列表  
 if SwitchMIRROR:
+    print("         鏡新聞  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://mirrormedia.mg/category/news"
@@ -457,8 +505,9 @@ if SwitchMIRROR:
         if not isInTimeRange(newsTime, "%Y.%m.%d %H:%M", earlier):
             break
 
-        print(str(counter) + "  " + newsTime)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + "  " + newsTime)
+            counter +  1
 
         newsContents   subSoup.find_all("span", {"data-text":"true"})
         newsContent   ""
@@ -469,11 +518,13 @@ if SwitchMIRROR:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（鏡新聞）", newsLink, keywords)
+    print("         鏡新聞  結束              ")
 
 #################################################################################
 
 # TVBS 即時新聞列表  
 if SwitchTVBS:
+    print("         TVBS  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://news.tvbs.com.tw/realtime"
@@ -498,20 +549,23 @@ if SwitchTVBS:
 
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
-
-        print(str(counter) + "  " + newsTime)
-        counter +  1
+        
+        if printCounterTime:
+            print(str(counter) + "  " + newsTime)
+            counter +  1
 
         newsContents   subSoup.find_all("div", class_ "article_content", id "news_detail_div")
         keywords   isRelatedNews(str(newsContents))
 
         if len(keywords) !  0:
             printResult(newsTitle, "（TVBS）", newsLink, keywords)
+    print("         TVBS  結束              ")
 
 #################################################################################
 
 # NOWNEWS 即時新聞
 if SwitchNOWNEWS:
+    print("         NOWNEWS  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://nownews.com/cat/breaking"
@@ -541,8 +595,9 @@ if SwitchNOWNEWS:
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
-        print(str(counter) + "  " + newsTime)
-        counter +  1
+        if printCounterTime:
+            print(str(counter) + "  " + newsTime)
+            counter +  1
 
         newsBody   subSoup.find_all("article")  
         if newsBody is None or len(newsBody)    0:
@@ -564,3 +619,169 @@ if SwitchNOWNEWS:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（NOWNEWS）", newsLink, keywords)
+    print("         NOWNEWS  結束              ")
+
+#################################################################################
+
+# 東森新聞 即時新聞列表
+# 看起來新聞內文的網頁有擋爬蟲
+if SwitchEBC:
+    earlier   datetime.now() - timedelta(hours timeSlot)
+
+    for page in range(1, scrollPages+1):
+        url   "https://news.ebc.net.tw/realtime?page " + str(page)
+        soup   getSoupFromURL(url, 0, scrollDelay)
+        links   soup.find_all("div", class_ "news-list-box")
+        links   links[0].find_all("div", class_ "style1 white-box")
+
+        time.sleep(1)
+
+        counter   1
+        for link in links:
+            if not isinstance(link, Tag):
+                continue
+
+            newsTitle   str(link.find("span", class_ "title").contents[0])
+            print(newsTitle)
+            newsLink   "https://news.ebc.net.tw" + str(link.find("a")["href"])
+            print(newsLink)
+
+            subResult   requests.get(newsLink)
+            subSoup   BeautifulSoup(subResult.text, features "html.parser")
+            print(subSoup)
+            newsInfo   subSoup.find_all("div", class_ "info")
+            print(newsInfo)
+            # newsTime   newsInfo.find("span", class_ "small-gray-text")
+            # print(newsTime)
+
+            break
+
+            newsTime   link.find("div", class_ "date").contents[0]
+            newsLink   "https://cna.com.tw" + link.find("a")["href"]
+            newsTitle   str(link.find("span").contents[0])
+
+            if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+                break
+
+            print(str(counter) + " " + newsTime)
+            counter +  1
+
+            newsContent   subSoup.find_all('p')
+
+            keywords   isRelatedNews(str(newsContent))
+
+            if len(keywords) !  0:
+                printResult(newsTitle, "（中央社）", newsLink, keywords)
+
+
+        break
+
+#################################################################################
+
+# CTWANT (not finish)
+if SwitchCTWANT:
+    earlier   datetime.now() - timedelta(hours timeSlot)
+
+    counter   1
+    for page in range(1, scrollPages+1):
+        url   "https://ctwant.com/category/最新?page " + str(page)
+        soup   getSoupFromURL(url, 0, scrollDelay)
+        links   soup.find_all("div", class_ "p-realtime__item")
+
+        for link in links:
+            newsLink   "https://ctwant.com" + str(link.find("a")["href"])
+
+            newsTitle   str(link.find("h2").contents[0])
+            newsTitle   newsTitle.replace("\n", "")
+            newsTitle   newsTitle.replace("  ", "")
+
+            newsTime   str(link.find("time")["datetime"])
+
+            if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
+                break
+
+            if printCounterTime:
+                print(str(counter) + " " + newsTime)
+                counter +  1
+
+
+
+            subResult   requests.get(newsLink)
+            subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+            newsContents   subSoup.find("div", class_ "p-article__content")
+            print(newsContents)
+            print(type(newsContents))
+
+
+
+
+            break
+
+
+
+
+            newsContent   subSoup.find_all('p')
+
+            keywords   isRelatedNews(str(newsContent))
+
+            if len(keywords) !  0:
+                printResult(newsTitle, "（CTWANT）", newsLink, keywords)
+
+
+        break
+
+#################################################################################
+
+# tinyurl縮網址
+
+print("#####################################")
+print("    網頁爬蟲部分正常結束，開始縮網址。")
+print("#####################################")
+
+# To indicate termination
+newsInfoQueue.put(None)
+
+url   "https://tinyurl.com/app"
+driver.get(url)
+soup   BeautifulSoup(driver.page_source,"html.parser")
+
+programStartTime   datetime.now()
+
+filename   programStartTime.strftime("%Y%m%d_%H%M%S") + ".txt"
+counter   1
+with open(filename, 'w') as f:
+    while True:
+        newsInfo   newsInfoQueue.get()
+
+        if newsInfo    None:
+            f.write("                                         \n")
+            f.write("開始執行時間：" + str(programStartTime) + "\n")
+            f.write("執行結束時間：" + str(datetime.now()) + "\n")
+            f.write("抓取 " + str(timeSlot) + " 個小時內的新聞\n")
+            f.write("總共有 " + str(counter) + " 則相關新聞\n")
+            break
+        
+        counter +  1
+
+        f.write("." + newsInfo[0] + "\n")
+        longUrl   str(newsInfo[1])
+
+        # paste long url
+        driver.find_element(By.ID,'long-url').send_keys(longUrl)
+        time.sleep(1.5)
+
+        # generate short url
+        driver.find_element(By.XPATH, "//button[@data-test-id 'home_shortener_btn_create']").click()
+        time.sleep(1.5)
+
+        # copy short url
+        driver.find_element(By.XPATH, "//button[@id 'form_tinyurl_copy_btn']").click()
+        time.sleep(1.5)
+        f.write(pc.paste() + "\n")
+
+        # return to original page for another iteration
+        driver.find_element(By.XPATH, "//button[@id 'homepage_create_tinyurl_form_shorten_another_btn']").click()
+
+
+driver.close()
