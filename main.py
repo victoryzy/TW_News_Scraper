@@ -1,3 +1,49 @@
+# 0   不爬文 ;  1   爬文
+SwitchLTN       1   # 自由時報 
+SwitchUDN       1   # 聯合新聞網
+SwitchCNA       1   # 中央社
+SwitchET        1   # ETtoday (列表有tag，可以考慮刪掉某些分類像是「旅遊、房產雲、影劇、時尚、財經、寵物動物、ET車雲」）
+SwitchApple     1   # 壹蘋新聞網 (列表有tag，可以考慮刪掉某些分類像是「體育、娛樂時尚、財經地產、購物」）
+SwitchSET       1   # 三立新聞網 (列表有tag，可以考慮刪掉某些分類像是「娛樂、財經、運動、兩岸、音樂、新奇」)
+SwitchMIRROR    1   # 鏡週刊 
+SwitchTVBS      1   # TVBS (列表有tag，可以考慮刪掉某些分類像是「娛樂、食尚、體育」）
+SwitchNOWNEWS   1   # NOWNEWS
+
+SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新     可爬，需換頁加載，不確定會不會被擋
+SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
+
+# 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
+# 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
+# 可以把下面這個數字加大，但爬文所需時間會慢一些
+scrollPages   1   
+timeSlot      1.1   # 收集幾個小時內的新聞
+
+scrollDelay   1.5   # 模擬滑鼠滾輪往下滾的間隔時間
+
+places   ["竹市", "消防局", "消防署", "竹塹"]
+persons   ["高虹安", "高市長", "科長", "局長", "消防員", "替代役",
+           "義消", "義警消", "分隊長", "小隊長", "大隊長", 
+           "救護技術員", "EMT", "消促會", "工作權益促進會"]
+issues   ["災情",  "救災", "屍", "倒塌", "消防", "到院前", 
+          "特搜", "防災", "傷亡", "撫卹", "一氧化碳中毒"]
+
+issueFire   ["火災", "失火", "防火", "起火", "大火", "火光", "火燒車",
+             "水線", "滅火器", "火海", "打火", "白煙", "黑煙", "灌救",
+             "火調", "燒毀", "爆炸", "釀災", "冒煙", "濃煙",
+             "延燒", "火警", "燒起來", "雲梯車", "火燒"]
+issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震", "土石流"]
+issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救", "安檢"]
+issueGoods   ["AED", "住警器", "消防栓"]
+issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺", "珍惜生命"]
+issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
+               "死者", "殉職", "失聯", "嗆暈", "意識模糊", "遺體", 
+               "命危", "OHCA", "無生命跡象", "中毒", "不治",
+               "任務結束", "無呼吸心跳", "受困", "罹難", "昏迷", "無意識"]
+
+#############################################################
+#   以下內容不要修改
+#############################################################
+
 import re
 import os
 import sys
@@ -10,89 +56,46 @@ from bs4 import BeautifulSoup, Tag
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from urllib3.exceptions import InsecureRequestWarning
 
 #############################################################
 """
 1. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
 
-
 Long-term feature:
-1. 某些新聞會有「發布時間」和「更新時間」，應該以發布時間為準，避免相同媒體在不同時間抓到相同的新聞。
-2. 舉例來說，「殺人罪」會因為「殺人」的關鍵字被抓到，但有罪行的新聞應該都不是事件發生當天的新聞，應該要想辦法避開。
-3. 某些媒體會針對新聞分類，例如：社會、娛樂、政治，可以考慮排除某些分類標籤的新聞。
-4. 
-
+1. 舉例來說，「殺人罪」會因為「殺人」的關鍵字被抓到，但有罪行的新聞應該都不是事件發生當天的新聞，應該要想辦法避開。
+2. 某些媒體會針對新聞分類，例如：社會、娛樂、政治，可以考慮排除某些分類標籤的新聞。
 
 """
-#############################################################
-# 0   不爬文 ;  1   爬文
-SwitchLTN       1   # 自由時報 (沒有日期資訊)
-SwitchUDN       1   # 聯合新聞網
-SwitchCNA       1   # 中央社
-SwitchET        1   # ETtoday
-SwitchApple     1   # 壹蘋新聞網
-SwitchSET       1   # 三立新聞網 
-SwitchMIRROR    1   # 鏡週刊
-SwitchTVBS      1   # TVBS 
-SwitchNOWNEWS   1   # NOWNEWS
-
-SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新     可爬，需換頁加載，不確定會不會被擋
-SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
 
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
-# 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
-# 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
-# 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   1   
-timeSlot      1   # 收集幾個小時內的新聞
-
-scrollDelay   1   # 模擬滑鼠滾輪往下滾的間隔時間
-
-places   ["竹市", "消防局", "消防署", "訓練中心", "竹塹"]
-persons   ["高虹安", "高市長", 
-           "署長", "科長", "局長", "消防員", "替代役",
-           "義消", "義警消", "分隊長", "小隊長", "大隊長", 
-           "救護技術員", "EMT", "消促會", "工作權益促進會"]
-issues   ["災情",  "救災", "救護", "屍", "倒塌", "消防", 
-          "到院前", "特搜", "防災", "傷亡", "化學", 
-         "救援", "撫卹", "119", "一氧化碳"]
-
-issueFire   ["火災", "失火", "防火", "起火", "大火", "火光", "火燒車",
-             "水線", "滅火器", "火海", "打火", "白煙", "黑煙", "灌救",
-             "火調", "燒毀", "烈焰", "爆炸", "釀災", "冒煙", "濃煙",
-             "延燒", "火警", "燒起來", "雲梯車", "火燒"]
-issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震", "土石流"]
-issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "演練", "宣導", "搜救", "灌救", "安檢"]
-issueGoods   ["AED", "住警器", "消防栓"]
-issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺", "珍惜生命"]
-issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
-               "死者", "殉職", "失聯", "嗆暈", "意識模糊", "遺體", 
-               "命危", "OHCA", "無生命跡象", "中毒", "不治",
-               "任務結束", "無呼吸心跳", "受困", "罹難", "受傷", 
-               "昏迷", "無意識"]
-
 newsInfoQueue   Queue()
-#################################################################################
-
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
 
-driverPath   r"/usr/local/bin/chromedriver"
-service_   Service(executable_path driverPath)
-
-opt   webdriver.ChromeOptions()
+driverPath   ""
+userAgent   ""
 
 if sys.platform    "darwin":
     # macos
-    opt.add_argument("user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+    userAgent   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+    driverPath   r"/usr/local/bin/chromedriver"
 if sys.platform    "win32":
     # windows
-    opt.add_argument("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+    userAgent   "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+    driverPath   r"C:\\Users\\Administrator\\Desktop\\news\\chromedriver.exe"
 
+opt   webdriver.ChromeOptions()
+opt.add_argument(f"--user-agent {userAgent}")
 opt.add_argument("--disable-notifications")
-opt.add_extension("/Users/victoryang/Library/Application Support/Google/Chrome/Default/Extensions/daocanafelgllopgddpchjaoldiinoob/1.1.0_0.crx")
+opt.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+service_   Service(executable_path driverPath)
 driver   webdriver.Chrome(service service_, options opt)
+
+requests.packages.urllib3.disable_warnings(category InsecureRequestWarning)
 
 programStartTime   datetime.now()
 
@@ -170,7 +173,7 @@ if SwitchLTN:
         newsTimeString   ""
         for sting_ in newsTimes:
             newsTimeString +  str(sting_.contents)
-        times   re.findall("\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsTimeString)
+        times   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsTimeString)
         newsTime   str(times[0])
 
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
@@ -224,6 +227,9 @@ if SwitchUDN:
                 newsLink   newsLink.replace("?from udn-ch1_breaknews-1-0-news", "")
 
         newsTime   link.find("div", class_ "story-list__info")
+        if (newsTime is None) or (newsTitle is None) or (newsLink is None):
+            print("continue")
+            continue
         newsTime   newsTime.find("time", class_ "story-list__time").contents
         if len(newsTime)    1:
             newsTime   str(newsTime[0])
@@ -452,8 +458,7 @@ if SwitchSET:
             print(str(counter) + "  " + newsTimeStr)
             counter +  1
 
-        newsContent   subSoup.find_all('p')
-
+        newsContent   subSoup.find_all("div", class_ "Content1")
         keywords   isRelatedNews(str(newsContent))
 
         if len(keywords) !  0:
@@ -462,9 +467,9 @@ if SwitchSET:
 
 #################################################################################
 
-# 鏡新聞 焦點新聞列表  
+# 鏡週刊 焦點新聞列表  
 if SwitchMIRROR:
-    print("         鏡新聞  開始              ")
+    print("         鏡週刊  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://mirrormedia.mg/category/news"
@@ -486,7 +491,14 @@ if SwitchMIRROR:
         if newsLink is None:
             continue
 
-        subResult   requests.get(newsLink)
+        subResult   None
+        if sys.platform    "darwin":
+            # macos
+            subResult   requests.get(newsLink)
+        if sys.platform    "win32":
+            # windows
+            subResult   requests.get(newsLink, verify False)
+
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
         divs   subSoup.find_all("div")
         for div in divs:
@@ -517,8 +529,8 @@ if SwitchMIRROR:
         keywords   isRelatedNews(newsContent)
 
         if len(keywords) !  0:
-            printResult(newsTitle, "（鏡新聞）", newsLink, keywords)
-    print("         鏡新聞  結束              ")
+            printResult(newsTitle, "（鏡週刊）", newsLink, keywords)
+    print("         鏡週刊  結束              ")
 
 #################################################################################
 
@@ -544,7 +556,7 @@ if SwitchTVBS:
 
         authorAndTime   subSoup.find_all("div", class_ "author")
         authorAndTime   str(authorAndTime[0])
-        times   re.findall("\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", authorAndTime)
+        times   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", authorAndTime)
         newsTime   str(times[0])
 
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
