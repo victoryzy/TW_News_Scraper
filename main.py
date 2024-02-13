@@ -2,43 +2,40 @@
 SwitchLTN       1   # 自由時報 
 SwitchUDN       1   # 聯合新聞網
 SwitchCNA       1   # 中央社
-SwitchET        1   # ETtoday (列表有tag，可以考慮刪掉某些分類像是「旅遊、房產雲、影劇、時尚、財經、寵物動物、ET車雲」）
+SwitchET        1   # ETtoday    (列表有tag，可以考慮刪掉某些分類像是「旅遊、房產雲、影劇、時尚、財經、寵物動物、ET車雲」）
 SwitchApple     1   # 壹蘋新聞網 (列表有tag，可以考慮刪掉某些分類像是「體育、娛樂時尚、財經地產、購物」）
 SwitchSET       1   # 三立新聞網 (列表有tag，可以考慮刪掉某些分類像是「娛樂、財經、運動、兩岸、音樂、新奇」)
 SwitchMIRROR    1   # 鏡週刊 
-SwitchTVBS      1   # TVBS (列表有tag，可以考慮刪掉某些分類像是「娛樂、食尚、體育」）
+SwitchTVBS      1   # TVBS       (列表有tag，可以考慮刪掉某些分類像是「娛樂、食尚、體育」）
 SwitchNOWNEWS   1   # NOWNEWS
+SwitchCTWANT    1   # CTWANT    （新聞內頁有tag)
 
-SwitchCTWANT    0   # CTWANT    https://ctwant.com/category/最新     可爬，需換頁加載，不確定會不會被擋
 SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
-timeSlot      1.1   # 收集幾個小時內的新聞
+timeSlot      1.0   # 收集幾個小時內的新聞
 
-scrollDelay   1.5   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "竹塹"]
-persons   ["高虹安", "高市長", "科長", "局長", "消防員", "替代役",
-           "義消", "義警消", "分隊長", "小隊長", "大隊長", 
-           "救護技術員", "EMT", "消促會", "工作權益促進會"]
-issues   ["災情",  "救災", "屍", "倒塌", "消防", "到院前", 
-          "特搜", "防災", "傷亡", "撫卹", "一氧化碳中毒"]
+persons   ["高虹安", "高市長", "消防員", "消防替代役", "消防役", "EMT",
+           "義消", "義警消", "搜救人員", "救護技術員",  "消促會", "工作權益促進會"]
+issues   ["災情",  "救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒"]
 
-issueFire   ["火災", "失火", "防火", "起火", "大火", "火光", "火燒車",
-             "水線", "滅火器", "火海", "打火", "白煙", "黑煙", "灌救",
-             "火調", "燒毀", "爆炸", "釀災", "冒煙", "濃煙",
-             "延燒", "火警", "燒起來", "雲梯車", "火燒"]
-issueAccident   ["車禍", "地震", "墜橋", "輾斃", "跌落", "墜落", "山難", "瓦斯外洩", "強震", "土石流"]
-issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救", "安檢"]
+issueFire   ["火災", "失火", "起火", "大火", "火光", "火燒車",
+             "水線", "滅火器", "火海", "打火", "灌救",
+             "火調", "燒毀", "火警", "燒起來", "雲梯車"]
+issueAccident   ["車禍", "地震", "墜橋", "輾斃", "墜落", "山難", "瓦斯外洩", "強震", "土石流"]
+issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救"]
 issueGoods   ["AED", "住警器", "消防栓"]
-issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺", "珍惜生命"]
-issueStatus   ["死亡", "喪命", "喪生", "離世", "失蹤", "傷者",
-               "死者", "殉職", "失聯", "嗆暈", "意識模糊", "遺體", 
-               "命危", "OHCA", "無生命跡象", "中毒", "不治",
-               "任務結束", "無呼吸心跳", "受困", "罹難", "昏迷", "無意識"]
+issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺"]
+issueStatus   ["死亡", "喪命", "喪生", "失蹤", "傷者", "遺體", 
+               "死者", "殉職", "失聯", "嗆暈", "意識模糊", 
+               "命危", "OHCA", "無生命跡象", "不治", "昏迷",
+               "無呼吸心跳", "受困", "罹難", "無意識"]
 
 #############################################################
 #   以下內容不要修改
@@ -72,6 +69,7 @@ Long-term feature:
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
+
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
 
@@ -87,6 +85,7 @@ if sys.platform    "win32":
     userAgent   "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     driverPath   r"C:\\Users\\Administrator\\Desktop\\news\\chromedriver.exe"
 
+headers   {'User-Agent' : userAgent}
 opt   webdriver.ChromeOptions()
 opt.add_argument(f"--user-agent {userAgent}")
 opt.add_argument("--disable-notifications")
@@ -238,6 +237,11 @@ if SwitchUDN:
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        for s in subSoup.select("style"):
+            s.extract()
+        for s in subSoup.select("script"):
+            s.extract()
+
         contents   subSoup.find_all('section', class_ "article-content__wrapper")
 
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
@@ -246,7 +250,6 @@ if SwitchUDN:
         if printCounterTime:
             print(str(counter) + " " + str(newsTime))
             counter +  1
-
         newsContent   ""
         for content in contents[0]:     ## bug here, may not appear every time
             if isinstance(content, Tag):
@@ -273,7 +276,7 @@ if SwitchCNA:
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://cna.com.tw/list/aall.aspx"
-    soup   getSoupFromURL(url, 0, scrollDelay)
+    soup   getSoupFromURL(url, 0, 4)
     links   soup.find_all('ul', class_ "mainList imgModule")
 
     counter   1
@@ -289,9 +292,19 @@ if SwitchCNA:
             print(str(counter) + " " + newsTime)
             counter +  1
 
-        subResult   requests.get(newsLink)
+        time.sleep(3)
+        subResult   requests.get(newsLink, headers headers)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+        for s in subSoup.select("script"):
+            s.extract()
+
+
         newsContent   subSoup.find_all('p')
+        newsContent   str(newsContent)
+
+        toRemove   re.search(r"\d{7}.*<\/p>, <p>本網站之文字、圖片及影音，非經授權，不得轉載、公開播送或公開傳輸及利用。<\/p>", newsContent).group(0)
+        newsContent   newsContent.replace(toRemove, "")
 
         keywords   isRelatedNews(str(newsContent))
 
@@ -397,6 +410,12 @@ if SwitchApple:
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+        for s in subSoup.select("script"):
+            s.extract()
+        for s in subSoup.select("a"):
+            s.extract()
+
         newsContents   subSoup.find_all("div", class_ "post-content")
         newsContent   subSoup.find_all("blockquote")
         newsContent +  newsContents[0].findAll("p")
@@ -429,9 +448,12 @@ if SwitchSET:
         newsLink   newsLink.replace("&utm_campaign viewallnews", "")
         newsLink   newsLink.replace("?utm_campaign viewallnews", "")
         newsTitle   str(linkAndTitle.contents[0])
-
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+        for s in subSoup.select("script"):
+            s.extract()
+
         newsTime   subSoup.find("time", class_ "page_date")
 
         if newsTime is None:
@@ -459,6 +481,11 @@ if SwitchSET:
             counter +  1
 
         newsContent   subSoup.find_all("div", class_ "Content1")
+        if newsContent is None or len(newsContent)    0:
+            newsContent   subSoup.find_all("article", class_ "printdiv")
+        if newsContent is None or len(newsContent)    0:
+            newsContent   subSoup.find_all("div", class_ "page-text")
+
         keywords   isRelatedNews(str(newsContent))
 
         if len(keywords) !  0:
@@ -566,6 +593,9 @@ if SwitchTVBS:
             print(str(counter) + "  " + newsTime)
             counter +  1
 
+        for s in subSoup.select("script"):
+            s.extract()
+
         newsContents   subSoup.find_all("div", class_ "article_content", id "news_detail_div")
         keywords   isRelatedNews(str(newsContents))
 
@@ -604,6 +634,9 @@ if SwitchNOWNEWS:
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
+        for s in subSoup.select("script"):
+            s.extract()
+
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
@@ -632,6 +665,48 @@ if SwitchNOWNEWS:
         if len(keywords) !  0:
             printResult(newsTitle, "（NOWNEWS）", newsLink, keywords)
     print("         NOWNEWS  結束              ")
+
+#################################################################################
+
+# CTWANT 最新新聞列表
+if SwitchCTWANT:
+    print("         CTWANT  開始              ")
+    earlier   datetime.now() - timedelta(hours timeSlot)
+
+    counter   1
+    for page in range(1, scrollPages+1):
+        url   "https://ctwant.com/category/最新?page " + str(page)
+        soup   getSoupFromURL(url, 0, scrollDelay)
+        links   soup.find_all("div", class_ "p-realtime__item")
+
+        for link in links:
+            newsLink   "https://ctwant.com" + str(link.find("a")["href"])
+            newsTime   str(link.find("time")["datetime"])
+
+            newsTitle   str(link.find("h2").contents[0])
+            newsTitle   newsTitle.replace("\n", "")
+            newsTitle   newsTitle.replace("  ", "")
+
+            if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
+                break
+
+            if printCounterTime:
+                print(str(counter) + " " + newsTime)
+                counter +  1
+
+            subResult   requests.get(newsLink)
+            subSoup   BeautifulSoup(subResult.text, features "html.parser")
+            newsContent   subSoup.find("div", class_ "p-article__content")
+
+            buttons   newsContent.findAll("button")
+            for button in buttons:
+                button.extract()
+
+            keywords   isRelatedNews(str(newsContent))
+
+            if len(keywords) !  0:
+                printResult(newsTitle, "（CTWANT）", newsLink, keywords)
+    print("         CTWANT  結束              ")
 
 #################################################################################
 
@@ -690,67 +765,12 @@ if SwitchEBC:
 
 #################################################################################
 
-# CTWANT (not finish)
-if SwitchCTWANT:
-    earlier   datetime.now() - timedelta(hours timeSlot)
-
-    counter   1
-    for page in range(1, scrollPages+1):
-        url   "https://ctwant.com/category/最新?page " + str(page)
-        soup   getSoupFromURL(url, 0, scrollDelay)
-        links   soup.find_all("div", class_ "p-realtime__item")
-
-        for link in links:
-            newsLink   "https://ctwant.com" + str(link.find("a")["href"])
-
-            newsTitle   str(link.find("h2").contents[0])
-            newsTitle   newsTitle.replace("\n", "")
-            newsTitle   newsTitle.replace("  ", "")
-
-            newsTime   str(link.find("time")["datetime"])
-
-            if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
-                break
-
-            if printCounterTime:
-                print(str(counter) + " " + newsTime)
-                counter +  1
-
-
-
-            subResult   requests.get(newsLink)
-            subSoup   BeautifulSoup(subResult.text, features "html.parser")
-
-            newsContents   subSoup.find("div", class_ "p-article__content")
-            print(newsContents)
-            print(type(newsContents))
-
-
-
-
-            break
-
-
-
-
-            newsContent   subSoup.find_all('p')
-
-            keywords   isRelatedNews(str(newsContent))
-
-            if len(keywords) !  0:
-                printResult(newsTitle, "（CTWANT）", newsLink, keywords)
-
-
-        break
-
-#################################################################################
-
 # tinyurl縮網址
 
 print("#####################################")
 print("    網頁爬蟲部分正常結束，開始縮網址。")
 print("#####################################")
-
+exit()
 # To indicate termination
 newsInfoQueue.put(None)
 
@@ -762,7 +782,7 @@ programStartTime   datetime.now()
 
 filename   programStartTime.strftime("%Y%m%d_%H%M%S") + ".txt"
 counter   1
-with open(filename, 'w') as f:
+with open(filename, 'w', encoding 'UTF-8') as f:
     while True:
         newsInfo   newsInfoQueue.get()
 
@@ -776,7 +796,7 @@ with open(filename, 'w') as f:
         
         counter +  1
 
-        f.write("." + newsInfo[0] + "\n")
+        f.write(". " + newsInfo[0] + "\n")
         longUrl   str(newsInfo[1])
 
         # paste long url
@@ -795,5 +815,8 @@ with open(filename, 'w') as f:
         # return to original page for another iteration
         driver.find_element(By.XPATH, "//button[@id 'homepage_create_tinyurl_form_shorten_another_btn']").click()
 
+print("#####################################")
+print("    縮網址部分正常結束，請開啟 " + filename + " 檢視新聞")
+print("#####################################")
 
 driver.close()
