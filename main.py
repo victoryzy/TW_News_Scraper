@@ -9,19 +9,19 @@ SwitchMIRROR    1   # 鏡週刊
 SwitchTVBS      1   # TVBS
 SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
+SwitchEBC       1   # 東森新聞
 
-SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
-timeSlot      2.5   # 收集幾個小時內的新聞
+timeSlot      1.1   # 收集幾個小時內的新聞
 
-scrollDelay   2   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   1.5   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "竹塹"]
-persons   ["高虹安", "高市長", "消防員", "消防替代役", "消防役", "EMT",
+persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
            "義消", "義警消", "搜救人員", "救護技術員",  "消促會", "工作權益促進會"]
 issues   ["災情",  "救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒"]
 
@@ -36,19 +36,19 @@ issueStatus   ["死亡", "喪命", "喪生", "失蹤", "傷者", "遺體",
                "死者", "殉職", "失聯", "嗆暈", "意識模糊", 
                "命危", "OHCA", "無生命跡象", "不治", "昏迷",
                "無呼吸心跳", "受困", "罹難", "無意識"]
-UDNDeleteTags   ["股市", "產經", "娛樂", "運動", "科技", "文教", "健康"]
-CNADeleteTags   ["產經", "證券", "科技", "文化", "運動", "娛樂"]
-ETtodayDeleteTags   ["旅遊", "房產雲", "影劇", "時尚", "財經", "寵物動物", "ET車雲"]
-AppleDeleteTags   ["體育", "娛樂時尚", "財經地產", "購物"]
-SETDeleteTags   ["娛樂", "財經", "運動", "兩岸", "音樂", "新奇"]
-TVBSDeleteTags   ["娛樂", "食尚", "體育"]
-CTWANTDeleteTags   ["娛樂", "財經", "漂亮"]
+deleteTagsUDN       ["娛樂", "股市", "產經", "運動", "科技", "文教", "健康"]
+deleteTagsCNA       ["娛樂", "產經", "證券", "科技", "文化", "運動"]
+deleteTagsETtoday   ["旅遊", "房產雲", "影劇", "時尚", "財經", "寵物動物", "ET車雲"]
+deleteTagsApple     ["體育", "娛樂時尚", "財經地產", "購物"]
+deleteTagsSET       ["娛樂", "財經", "運動", "兩岸", "音樂", "新奇"]
+deleteTagsTVBS      ["娛樂", "食尚", "體育"]
+deleteTagsCTWANT    ["娛樂", "財經", "漂亮"]
+deleteTagsEBC       ["娛樂", "健康", "體育", "財經"]
 #############################################################
 #   以下內容不要修改
 #############################################################
 
 import re
-import os
 import sys
 import time
 import requests
@@ -67,14 +67,14 @@ from urllib3.exceptions import InsecureRequestWarning
 
 Long-term feature:
 1. 舉例來說，「殺人罪」會因為「殺人」的關鍵字被抓到，但有罪行的新聞應該都不是事件發生當天的新聞，應該要想辦法避開。
-2. 天氣預報的新聞高機率會出現竹市，看有沒有general rule可以排除？
+2. 天氣預報的新聞高機率會出現竹市，看有沒有general rule可以排除？ (暴力的用reg去除 11YMMDD 的數字串？)
 
 """
 
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
-debugNoShortenURL   False
+debugNoShortenURL   True
 
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
@@ -149,7 +149,11 @@ def printResult(newsTitle, source, newsLink, keywords):
     print(str(newsTitle), source)
     print(newsLink)
     print(keywords)
-    newsInfoQueue.put((str(newsTitle) + source, newsLink))
+
+    if "竹市" in keywords:
+        newsTitle   "(本市)" + str(newsTitle) 
+
+    newsInfoQueue.put((newsTitle+ source, newsLink))
 
 #################################################################################
 
@@ -260,7 +264,7 @@ if SwitchUDN:
         newsTag   subSoup.find("nav", class_ "article-content__breadcrumb")
         if newsTag is not None:
             newsTag   newsTag.contents[3].contents[0]
-            if newsTag in UDNDeleteTags:
+            if newsTag in deleteTagsUDN:
                 print("[聯合] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
                 continue
 
@@ -295,6 +299,9 @@ if SwitchCNA:
 
     counter   1
     for link in links[0]:
+        if link.has_attr("style"):
+            continue
+
         newsTime   link.find("div", class_ "date").contents[0]
         newsLink   "https://cna.com.tw" + link.find("a")["href"]
         newsTitle   str(link.find("span").contents[0])
@@ -311,7 +318,7 @@ if SwitchCNA:
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
         newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
-        if newsTag in CNADeleteTags:
+        if newsTag in deleteTagsCNA:
             print("[中央社] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
@@ -364,7 +371,7 @@ if SwitchET:
             counter +  1
 
         newsTag   str(link.find("em").contents[0])
-        if newsTag in ETtodayDeleteTags:
+        if newsTag in deleteTagsETtoday:
             print("[ETtoday] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
@@ -422,7 +429,7 @@ if SwitchApple:
             print(str(counter) + " " + newsTime)
             counter +  1
 
-        if newsTag in AppleDeleteTags:
+        if newsTag in deleteTagsApple:
             print("[壹蘋新聞網] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
@@ -499,7 +506,7 @@ if SwitchSET:
             counter +  1
 
         newsTag   link.find("div", class_ "newslabel-tab").contents[0].contents[0]
-        if newsTag in SETDeleteTags:
+        if newsTag in deleteTagsSET:
             print("[三立新聞] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
@@ -617,7 +624,7 @@ if SwitchTVBS:
             counter +  1
 
         newsTag   link.find("div", class_ "type").contents[0]
-        if newsTag in TVBSDeleteTags:
+        if newsTag in deleteTagsTVBS:
             print("[TVBS] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
@@ -728,7 +735,7 @@ if SwitchCTWANT:
 
             newsTag   subSoup.find("div", class_ "e-category__main").contents[0]
             newsTag   newsTag.replace(" ", "").replace("\n", "")
-            if newsTag in CTWANTDeleteTags:
+            if newsTag in deleteTagsCTWANT:
                 print("[CTWANT] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
                 continue
 
@@ -747,39 +754,37 @@ if SwitchCTWANT:
 # 東森新聞 即時新聞列表
 # 看起來新聞內文的網頁有擋爬蟲
 if SwitchEBC:
+    print("         東森新聞  開始              ")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
+    counter   1
     for page in range(1, scrollPages+1):
         url   "https://news.ebc.net.tw/realtime?page " + str(page)
-        soup   getSoupFromURL(url, 0, scrollDelay)
+        soup   getSoupFromURL(url, 0, scrollDelay+2)
         links   soup.find_all("div", class_ "news-list-box")
         links   links[0].find_all("div", class_ "style1 white-box")
 
         time.sleep(1)
 
-        counter   1
         for link in links:
             if not isinstance(link, Tag):
                 continue
 
             newsTitle   str(link.find("span", class_ "title").contents[0])
-            print(newsTitle)
             newsLink   "https://news.ebc.net.tw" + str(link.find("a")["href"])
-            print(newsLink)
+            newsTag   link.find("div", class_ "news-category").contents[0]
+            print(newsTag)
 
-            subResult   requests.get(newsLink)
+            subResult   requests.get(newsLink, headers headers)
             subSoup   BeautifulSoup(subResult.text, features "html.parser")
-            print(subSoup)
-            newsInfo   subSoup.find_all("div", class_ "info")
-            print(newsInfo)
-            # newsTime   newsInfo.find("span", class_ "small-gray-text")
-            # print(newsTime)
+            
+            for s in subSoup.select("a", class_ "related_link"):
+                s.extract()
+            for s in subSoup.select("a", class_ "hot_link"):
+                s.extract()
 
-            break
-
-            newsTime   link.find("div", class_ "date").contents[0]
-            newsLink   "https://cna.com.tw" + link.find("a")["href"]
-            newsTitle   str(link.find("span").contents[0])
+            newsInfo   str(subSoup.find("div", class_ "info"))
+            newsTime   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsInfo)[0]
 
             if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
                 break
@@ -787,15 +792,16 @@ if SwitchEBC:
             print(str(counter) + " " + newsTime)
             counter +  1
 
-            newsContent   subSoup.find_all('p')
+            if newsTag in deleteTagsEBC:
+                print("[東森] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+                continue
 
+            newsContent   str(subSoup.find("div", class_ "raw-style"))
             keywords   isRelatedNews(str(newsContent))
 
             if len(keywords) !  0:
-                printResult(newsTitle, "（中央社）", newsLink, keywords)
-
-
-        break
+                printResult(newsTitle, "（東森）", newsLink, keywords)
+    print("         東森新聞  結束              ")
 
 #################################################################################
 
