@@ -2,13 +2,13 @@
 SwitchLTN       1   # 自由時報 
 SwitchUDN       1   # 聯合新聞網
 SwitchCNA       1   # 中央社
-SwitchET        1   # ETtoday    (列表有tag，可以考慮刪掉某些分類像是「旅遊、房產雲、影劇、時尚、財經、寵物動物、ET車雲」）
-SwitchApple     1   # 壹蘋新聞網 (列表有tag，可以考慮刪掉某些分類像是「體育、娛樂時尚、財經地產、購物」）
-SwitchSET       1   # 三立新聞網 (列表有tag，可以考慮刪掉某些分類像是「娛樂、財經、運動、兩岸、音樂、新奇」)
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
+SwitchSET       1   # 三立新聞網
 SwitchMIRROR    1   # 鏡週刊 
-SwitchTVBS      1   # TVBS       (列表有tag，可以考慮刪掉某些分類像是「娛樂、食尚、體育」）
+SwitchTVBS      1   # TVBS
 SwitchNOWNEWS   1   # NOWNEWS
-SwitchCTWANT    1   # CTWANT    （新聞內頁有tag)
+SwitchCTWANT    1   # CTWANT
 
 SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬，需換頁加載，不確定會不會被擋
 
@@ -16,9 +16,9 @@ SwitchEBC       0   # 東森新聞   https://news.ebc.net.tw/realtime     可爬
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
-timeSlot      1.0   # 收集幾個小時內的新聞
+timeSlot      2.5   # 收集幾個小時內的新聞
 
-scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   2   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防替代役", "消防役", "EMT",
@@ -36,7 +36,13 @@ issueStatus   ["死亡", "喪命", "喪生", "失蹤", "傷者", "遺體",
                "死者", "殉職", "失聯", "嗆暈", "意識模糊", 
                "命危", "OHCA", "無生命跡象", "不治", "昏迷",
                "無呼吸心跳", "受困", "罹難", "無意識"]
-
+UDNDeleteTags   ["股市", "產經", "娛樂", "運動", "科技", "文教", "健康"]
+CNADeleteTags   ["產經", "證券", "科技", "文化", "運動", "娛樂"]
+ETtodayDeleteTags   ["旅遊", "房產雲", "影劇", "時尚", "財經", "寵物動物", "ET車雲"]
+AppleDeleteTags   ["體育", "娛樂時尚", "財經地產", "購物"]
+SETDeleteTags   ["娛樂", "財經", "運動", "兩岸", "音樂", "新奇"]
+TVBSDeleteTags   ["娛樂", "食尚", "體育"]
+CTWANTDeleteTags   ["娛樂", "財經", "漂亮"]
 #############################################################
 #   以下內容不要修改
 #############################################################
@@ -53,7 +59,6 @@ from bs4 import BeautifulSoup, Tag
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from urllib3.exceptions import InsecureRequestWarning
 
 #############################################################
@@ -62,13 +67,14 @@ from urllib3.exceptions import InsecureRequestWarning
 
 Long-term feature:
 1. 舉例來說，「殺人罪」會因為「殺人」的關鍵字被抓到，但有罪行的新聞應該都不是事件發生當天的新聞，應該要想辦法避開。
-2. 某些媒體會針對新聞分類，例如：社會、娛樂、政治，可以考慮排除某些分類標籤的新聞。
+2. 天氣預報的新聞高機率會出現竹市，看有沒有general rule可以排除？
 
 """
 
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
+debugNoShortenURL   False
 
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
@@ -242,14 +248,22 @@ if SwitchUDN:
         for s in subSoup.select("script"):
             s.extract()
 
-        contents   subSoup.find_all('section', class_ "article-content__wrapper")
-
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
         if printCounterTime:
             print(str(counter) + " " + str(newsTime))
             counter +  1
+
+        contents   subSoup.find_all('section', class_ "article-content__wrapper")
+
+        newsTag   subSoup.find("nav", class_ "article-content__breadcrumb")
+        if newsTag is not None:
+            newsTag   newsTag.contents[3].contents[0]
+            if newsTag in UDNDeleteTags:
+                print("[聯合] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+                continue
+
         newsContent   ""
         for content in contents[0]:     ## bug here, may not appear every time
             if isinstance(content, Tag):
@@ -296,15 +310,22 @@ if SwitchCNA:
         subResult   requests.get(newsLink, headers headers)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
+        newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
+        if newsTag in CNADeleteTags:
+            print("[中央社] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+            continue
+
         for s in subSoup.select("script"):
             s.extract()
-
 
         newsContent   subSoup.find_all('p')
         newsContent   str(newsContent)
 
         toRemove   re.search(r"\d{7}.*<\/p>, <p>本網站之文字、圖片及影音，非經授權，不得轉載、公開播送或公開傳輸及利用。<\/p>", newsContent).group(0)
         newsContent   newsContent.replace(toRemove, "")
+
+        if len(str(newsContent))    0:
+            print("[ERROR] 中央社 新聞內文沒有抓到")
 
         keywords   isRelatedNews(str(newsContent))
 
@@ -341,6 +362,11 @@ if SwitchET:
         if printCounterTime:
             print(str(counter) + " " + newsTime)
             counter +  1
+
+        newsTag   str(link.find("em").contents[0])
+        if newsTag in ETtodayDeleteTags:
+            print("[ETtoday] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+            continue
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -384,22 +410,10 @@ if SwitchApple:
 
     counter   1
     for link in links:
-        newsTitle   None
-        newsTime   None
-        newsLink   None
-
-        for l in link:
-            if isinstance(l, Tag):
-                title_   l.find("a", {"class":["post-title"]})
-                time_   l.find("time")
-                link_   l.find("a", href True)
-
-                if title_ is not None:
-                    newsTitle   str(title_.contents[0])
-                if time_ is not None:
-                    newsTime   str(time_.contents[0])
-                if link_ is not None:
-                    newsLink   str(link_["href"])
+        newsTitle   link.find("h3").contents[1].contents[0]
+        newsLink    link.find("h3").contents[1]["href"]
+        newsTag     link.find("div", class_ "category").contents[0]
+        newsTime    link.find("time").contents[0]
 
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
@@ -407,6 +421,10 @@ if SwitchApple:
         if printCounterTime:
             print(str(counter) + " " + newsTime)
             counter +  1
+
+        if newsTag in AppleDeleteTags:
+            print("[壹蘋新聞網] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+            continue
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -480,6 +498,11 @@ if SwitchSET:
             print(str(counter) + "  " + newsTimeStr)
             counter +  1
 
+        newsTag   link.find("div", class_ "newslabel-tab").contents[0].contents[0]
+        if newsTag in SETDeleteTags:
+            print("[三立新聞] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+            continue
+
         newsContent   subSoup.find_all("div", class_ "Content1")
         if newsContent is None or len(newsContent)    0:
             newsContent   subSoup.find_all("article", class_ "printdiv")
@@ -500,7 +523,7 @@ if SwitchMIRROR:
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://mirrormedia.mg/category/news"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay)
+    soup   getSoupFromURL(url, scrollPages, scrollDelay+1.5)
     links   soup.find_all("a", target "_blank")
 
     counter   1
@@ -592,6 +615,11 @@ if SwitchTVBS:
         if printCounterTime:
             print(str(counter) + "  " + newsTime)
             counter +  1
+
+        newsTag   link.find("div", class_ "type").contents[0]
+        if newsTag in TVBSDeleteTags:
+            print("[TVBS] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+            continue
 
         for s in subSoup.select("script"):
             s.extract()
@@ -690,13 +718,19 @@ if SwitchCTWANT:
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
                 break
 
+            subResult   requests.get(newsLink)
+            subSoup   BeautifulSoup(subResult.text, features "html.parser")
+            newsContent   subSoup.find("div", class_ "p-article__content")
+
             if printCounterTime:
                 print(str(counter) + " " + newsTime)
                 counter +  1
 
-            subResult   requests.get(newsLink)
-            subSoup   BeautifulSoup(subResult.text, features "html.parser")
-            newsContent   subSoup.find("div", class_ "p-article__content")
+            newsTag   subSoup.find("div", class_ "e-category__main").contents[0]
+            newsTag   newsTag.replace(" ", "").replace("\n", "")
+            if newsTag in CTWANTDeleteTags:
+                print("[CTWANT] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
+                continue
 
             buttons   newsContent.findAll("button")
             for button in buttons:
@@ -765,12 +799,15 @@ if SwitchEBC:
 
 #################################################################################
 
+if debugNoShortenURL:
+    driver.close()
+    exit()
+
 # tinyurl縮網址
 
 print("#####################################")
 print("    網頁爬蟲部分正常結束，開始縮網址。")
 print("#####################################")
-exit()
 # To indicate termination
 newsInfoQueue.put(None)
 
