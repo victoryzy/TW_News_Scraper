@@ -16,9 +16,9 @@ SwitchEBC       1   # 東森新聞
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
-timeSlot      1.1   # 收集幾個小時內的新聞
+timeSlot      1.2   # 收集幾個小時內的新聞
 
-scrollDelay   1.5   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   2.5   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
@@ -52,7 +52,6 @@ import re
 import sys
 import time
 import requests
-import pyperclip as pc
 from queue import Queue
 from selenium import webdriver
 from bs4 import BeautifulSoup, Tag
@@ -60,6 +59,7 @@ from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
+from selenium.common.exceptions import NoSuchElementException
 
 #############################################################
 """
@@ -69,12 +69,18 @@ Long-term feature:
 1. 舉例來說，「殺人罪」會因為「殺人」的關鍵字被抓到，但有罪行的新聞應該都不是事件發生當天的新聞，應該要想辦法避開。
 2. 天氣預報的新聞高機率會出現竹市，看有沒有general rule可以排除？ (暴力的用reg去除 11YMMDD 的數字串？)
 
+pip install beautifulsoup4
+pip install selenium
+pip install webdriver_manager
+pip install pip-system-certs      # 後來中央社不做SSL認證，cert相關應該可裝可不裝
+pip install python-certifi-win32
+
 """
 
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
-debugNoShortenURL   True
+doShortURL   True
 
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
@@ -103,6 +109,26 @@ driver   webdriver.Chrome(service service_, options opt)
 requests.packages.urllib3.disable_warnings(category InsecureRequestWarning)
 
 programStartTime   datetime.now()
+logFilename   "log_" + programStartTime.strftime("%Y%m%d_%H%M%S") + ".txt"
+
+class Logger(object):
+    def __init__(self):
+        self.terminal   sys.stdout
+   
+    def write(self, message):
+        self.terminal.write(message)
+        self.log   open(logFilename, "a")
+        self.log.write(message)  
+        self.log.close()
+
+    def flush(self):
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
+        pass    
+
+sys.stdout   Logger()
+sys.stderr   sys.stdout
 
 #################################################################################
 def isRelatedNews(content):
@@ -159,7 +185,7 @@ def printResult(newsTitle, source, newsLink, keywords):
 
 # 自由時報 即時新聞總覽
 if SwitchLTN:
-    print("         自由時報  開始              ")
+    print("vvvvvvvvv  開始: 自由時報")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://news.ltn.com.tw/list/breakingnews"
@@ -168,6 +194,7 @@ if SwitchLTN:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         newsTitle   str(link.find("h3", class_ "title").contents[0])
         newsLink   str(link['href'])
 
@@ -203,13 +230,13 @@ if SwitchLTN:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（自由）", newsLink, keywords)
-    print("         自由時報  結束              ")
+    print("^^^^^^^^^  結束: 自由時報\n")
 
 #################################################################################
 
 # 聯合新聞網 即時新聞
 if SwitchUDN:
-    print("         聯合新聞網  開始              ")
+    print("vvvvvvvvv  開始: 聯合新聞網")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://udn.com/news/breaknews"
@@ -218,6 +245,7 @@ if SwitchUDN:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         newsTitle   None
         newsTime   None
         newsLink   None
@@ -284,13 +312,13 @@ if SwitchUDN:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（聯合）", newsLink, keywords)
-    print("         聯合新聞網  結束              ")
+    print("^^^^^^^^^  結束: 聯合新聞網\n")
 
 #################################################################################
 
 # 中央社 即時新聞列表
 if SwitchCNA:
-    print("         中央社  開始              ")
+    print("vvvvvvvvv  開始: 中央社")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://cna.com.tw/list/aall.aspx"
@@ -299,6 +327,7 @@ if SwitchCNA:
 
     counter   1
     for link in links[0]:
+        time.sleep(0.2)
         if link.has_attr("style"):
             continue
 
@@ -338,13 +367,13 @@ if SwitchCNA:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（中央社）", newsLink, keywords)
-    print("         中央社  結束              ")
+    print("^^^^^^^^^  結束: 中央社\n")
 
 #################################################################################
 
 # ETtoday 新聞總覽
 if SwitchET:
-    print("         ETtoday  開始              ")
+    print("vvvvvvvvv  開始: ETtoday")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://ettoday.net/news/news-list.htm"
@@ -353,6 +382,7 @@ if SwitchET:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         newsTime   str(link.find("span", class_ "date").contents[0])
 
         newsTitle   link.find("a")
@@ -402,13 +432,13 @@ if SwitchET:
 
         if flagPlace or flagIssue or (flagPlace and flagPerson):
             printResult(newsTitle, "(ETtoday)", newsLink, keywords)
-    print("         ETtoday  結束              ")
+    print("^^^^^^^^^  結束: ETtoday\n")
 
 #################################################################################
 
 # 壹蘋新聞網 最新新聞列表
 if SwitchApple:
-    print("         壹蘋新聞網  開始              ")
+    print("vvvvvvvvv  開始: 壹蘋新聞網")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://tw.nextapple.com/realtime/latest"
@@ -417,6 +447,7 @@ if SwitchApple:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         newsTitle   link.find("h3").contents[1].contents[0]
         newsLink    link.find("h3").contents[1]["href"]
         newsTag     link.find("div", class_ "category").contents[0]
@@ -450,13 +481,13 @@ if SwitchApple:
 
         if len(keywords) !  0:
             printResult(newsTitle, "(壹蘋新聞網)", newsLink, keywords)
-    print("         壹蘋新聞網  結束              ")
+    print("^^^^^^^^^  結束: 壹蘋新聞網\n")
 
 #################################################################################
 
 # 三立新聞 新聞總覽
 if SwitchSET:
-    print("         三立新聞  開始              ")
+    print("vvvvvvvvv  開始: 三立新聞")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://setn.com/viewall.aspx"
@@ -465,6 +496,7 @@ if SwitchSET:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         linkAndTitle   link.find("a", class_ "gt")
         newsLink   str(linkAndTitle["href"])
         if "https" not in str(linkAndTitle["href"]):
@@ -520,13 +552,13 @@ if SwitchSET:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（三立）", newsLink, keywords)
-    print("         三立新聞  結束              ")
+    print("^^^^^^^^^  結束: 三立新聞\n")
 
 #################################################################################
 
 # 鏡週刊 焦點新聞列表  
 if SwitchMIRROR:
-    print("         鏡週刊  開始              ")
+    print("vvvvvvvvv  開始: 鏡週刊")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://mirrormedia.mg/category/news"
@@ -535,6 +567,7 @@ if SwitchMIRROR:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         newsLink   None
         newsTitle   None
         newsTime   None
@@ -587,13 +620,13 @@ if SwitchMIRROR:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（鏡週刊）", newsLink, keywords)
-    print("         鏡週刊  結束              ")
+    print("^^^^^^^^^  結束: 鏡週刊\n")
 
 #################################################################################
 
 # TVBS 即時新聞列表  
 if SwitchTVBS:
-    print("         TVBS  開始              ")
+    print("vvvvvvvvv  開始: TVBS")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://news.tvbs.com.tw/realtime"
@@ -602,6 +635,7 @@ if SwitchTVBS:
 
     counter   1
     for link in links:
+        time.sleep(0.2)
         if link.find("a") is None or link.find("div", class_ "time") is None:
             continue
 
@@ -636,13 +670,13 @@ if SwitchTVBS:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（TVBS）", newsLink, keywords)
-    print("         TVBS  結束              ")
+    print("^^^^^^^^^  結束: TVBS\n")
 
 #################################################################################
 
 # NOWNEWS 即時新聞
 if SwitchNOWNEWS:
-    print("         NOWNEWS  開始              ")
+    print("vvvvvvvvv  開始: NOWNEWS")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     url   "https://nownews.com/cat/breaking"
@@ -659,6 +693,7 @@ if SwitchNOWNEWS:
 
     counter   1
     for link in links[0]:
+        time.sleep(0.2)
         if not isinstance(link, Tag):
             continue
         
@@ -699,13 +734,13 @@ if SwitchNOWNEWS:
 
         if len(keywords) !  0:
             printResult(newsTitle, "（NOWNEWS）", newsLink, keywords)
-    print("         NOWNEWS  結束              ")
+    print("^^^^^^^^^  結束: NOWNEWS\n")
 
 #################################################################################
 
 # CTWANT 最新新聞列表
 if SwitchCTWANT:
-    print("         CTWANT  開始              ")
+    print("vvvvvvvvv  開始: CTWANT")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     counter   1
@@ -715,6 +750,7 @@ if SwitchCTWANT:
         links   soup.find_all("div", class_ "p-realtime__item")
 
         for link in links:
+            time.sleep(0.2)
             newsLink   "https://ctwant.com" + str(link.find("a")["href"])
             newsTime   str(link.find("time")["datetime"])
 
@@ -747,14 +783,14 @@ if SwitchCTWANT:
 
             if len(keywords) !  0:
                 printResult(newsTitle, "（CTWANT）", newsLink, keywords)
-    print("         CTWANT  結束              ")
+    print("^^^^^^^^^  結束: CTWANT\n")
 
 #################################################################################
 
 # 東森新聞 即時新聞列表
 # 看起來新聞內文的網頁有擋爬蟲
 if SwitchEBC:
-    print("         東森新聞  開始              ")
+    print("vvvvvvvvv  開始: 東森新聞")
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     counter   1
@@ -767,13 +803,13 @@ if SwitchEBC:
         time.sleep(1)
 
         for link in links:
+            time.sleep(0.2)
             if not isinstance(link, Tag):
                 continue
 
             newsTitle   str(link.find("span", class_ "title").contents[0])
             newsLink   "https://news.ebc.net.tw" + str(link.find("a")["href"])
             newsTag   link.find("div", class_ "news-category").contents[0]
-            print(newsTag)
 
             subResult   requests.get(newsLink, headers headers)
             subSoup   BeautifulSoup(subResult.text, features "html.parser")
@@ -801,11 +837,11 @@ if SwitchEBC:
 
             if len(keywords) !  0:
                 printResult(newsTitle, "（東森）", newsLink, keywords)
-    print("         東森新聞  結束              ")
+    print("^^^^^^^^^  結束: 東森新聞\n")
 
 #################################################################################
 
-if debugNoShortenURL:
+if not doShortURL:
     driver.close()
     exit()
 
@@ -813,7 +849,7 @@ if debugNoShortenURL:
 
 print("#####################################")
 print("    網頁爬蟲部分正常結束，開始縮網址。")
-print("#####################################")
+print("#####################################\n")
 # To indicate termination
 newsInfoQueue.put(None)
 
@@ -834,26 +870,25 @@ with open(filename, 'w', encoding 'UTF-8') as f:
             f.write("開始執行時間：" + str(programStartTime) + "\n")
             f.write("執行結束時間：" + str(datetime.now()) + "\n")
             f.write("抓取 " + str(timeSlot) + " 個小時內的新聞\n")
-            f.write("總共有 " + str(counter) + " 則相關新聞\n")
+            f.write("總共有 " + str(counter - 1) + " 則相關新聞\n")
             break
         
         counter +  1
-
         f.write(". " + newsInfo[0] + "\n")
         longUrl   str(newsInfo[1])
 
         # paste long url
         driver.find_element(By.ID,'long-url').send_keys(longUrl)
-        time.sleep(1.5)
+        time.sleep(2)
 
         # generate short url
         driver.find_element(By.XPATH, "//button[@data-test-id 'home_shortener_btn_create']").click()
-        time.sleep(1.5)
+        time.sleep(2)
 
         # copy short url
-        driver.find_element(By.XPATH, "//button[@id 'form_tinyurl_copy_btn']").click()
-        time.sleep(1.5)
-        f.write(pc.paste() + "\n")
+        shortURL   driver.find_element(By.ID,"homepage_create_tinyurl_form_created_input").get_attribute("value")
+        time.sleep(1)
+        f.write(str(shortURL) + "\n")
 
         # return to original page for another iteration
         driver.find_element(By.XPATH, "//button[@id 'homepage_create_tinyurl_form_shorten_another_btn']").click()
