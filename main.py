@@ -59,7 +59,6 @@ from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
-from selenium.common.exceptions import NoSuchElementException
 
 #############################################################
 """
@@ -109,7 +108,8 @@ driver   webdriver.Chrome(service service_, options opt)
 requests.packages.urllib3.disable_warnings(category InsecureRequestWarning)
 
 programStartTime   datetime.now()
-logFilename   "log_" + programStartTime.strftime("%Y%m%d_%H%M%S") + ".txt"
+resultFilename   programStartTime.strftime("%Y%m%d_%H%M%S") + ".txt"
+logFilename   "log_" + resultFilename
 
 class Logger(object):
     def __init__(self):
@@ -117,7 +117,7 @@ class Logger(object):
    
     def write(self, message):
         self.terminal.write(message)
-        self.log   open(logFilename, "a")
+        self.log   open(logFilename, "a", encoding "utf-8")
         self.log.write(message)  
         self.log.close()
 
@@ -414,7 +414,7 @@ if SwitchET:
         flagIssue   False
         keywords   set()
         for paragraph in newsContent:
-            if "分享給朋友" in str(paragraph):
+            if "分享給朋友" in str(paragraph) or "延伸閱讀" in str(paragraph):
                 break
 
             for place in places:
@@ -859,9 +859,8 @@ soup   BeautifulSoup(driver.page_source,"html.parser")
 
 programStartTime   datetime.now()
 
-filename   programStartTime.strftime("%Y%m%d_%H%M%S") + ".txt"
 counter   1
-with open(filename, 'w', encoding 'UTF-8') as f:
+with open(resultFilename, 'w', encoding 'UTF-8') as f:
     while True:
         newsInfo   newsInfoQueue.get()
 
@@ -894,7 +893,7 @@ with open(filename, 'w', encoding 'UTF-8') as f:
         driver.find_element(By.XPATH, "//button[@id 'homepage_create_tinyurl_form_shorten_another_btn']").click()
 
 print("#####################################")
-print("    縮網址部分正常結束，請開啟 " + filename + " 檢視新聞")
+print("    縮網址部分正常結束，請開啟 " + resultFilename + " 檢視新聞")
 print("#####################################")
 
 driver.close()
