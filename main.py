@@ -16,7 +16,7 @@ SwitchEBC       1   # 東森新聞
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
-timeSlot      1.2   # 收集幾個小時內的新聞
+timeSlot      2.0   # 收集幾個小時內的新聞
 
 scrollDelay   2.5   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -542,7 +542,7 @@ if SwitchSET:
             print("[三立新聞] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
-        newsContent   subSoup.find_all("div", class_ "Content1")
+        newsContent   subSoup.find_all("div", id "Content1")
         if newsContent is None or len(newsContent)    0:
             newsContent   subSoup.find_all("article", class_ "printdiv")
         if newsContent is None or len(newsContent)    0:
@@ -813,11 +813,6 @@ if SwitchEBC:
 
             subResult   requests.get(newsLink, headers headers)
             subSoup   BeautifulSoup(subResult.text, features "html.parser")
-            
-            for s in subSoup.select("a", class_ "related_link"):
-                s.extract()
-            for s in subSoup.select("a", class_ "hot_link"):
-                s.extract()
 
             newsInfo   str(subSoup.find("div", class_ "info"))
             newsTime   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsInfo)[0]
@@ -833,7 +828,12 @@ if SwitchEBC:
                 continue
 
             newsContent   str(subSoup.find("div", class_ "raw-style"))
-            keywords   isRelatedNews(str(newsContent))
+
+            pos   newsContent.find("更多鏡週刊報導")
+            if pos !  -1:
+                newsContent   newsContent[:pos]
+
+            keywords   isRelatedNews(newsContent)
 
             if len(keywords) !  0:
                 printResult(newsTitle, "（東森）", newsLink, keywords)
