@@ -16,7 +16,7 @@ SwitchEBC       1   # 東森新聞
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
-timeSlot      2.0   # 收集幾個小時內的新聞
+timeSlot      1.0   # 收集幾個小時內的新聞
 
 scrollDelay   2.5   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -36,11 +36,16 @@ issueStatus   ["死亡", "喪命", "喪生", "失蹤", "傷者", "遺體",
                "死者", "殉職", "失聯", "嗆暈", "意識模糊", 
                "命危", "OHCA", "無生命跡象", "不治", "昏迷",
                "無呼吸心跳", "受困", "罹難", "無意識"]
+
+deleteTagsLTN   {"ent":"娛樂", "istyle":"時尚", "sports":"體育", "ec":"財經", "def":"軍武",
+             "3c":"3C", "art.ltn":"藝文", "playing":"玩咖", "food":"食譜", "estate":"地產",
+             "yes123":"求職", "auto":"汽車"}
 deleteTagsUDN       ["娛樂", "股市", "產經", "運動", "科技", "文教", "健康"]
 deleteTagsCNA       ["娛樂", "產經", "證券", "科技", "文化", "運動"]
 deleteTagsETtoday   ["旅遊", "房產雲", "影劇", "時尚", "財經", "寵物動物", "ET車雲"]
 deleteTagsApple     ["體育", "娛樂時尚", "財經地產", "購物"]
 deleteTagsSET       ["娛樂", "財經", "運動", "兩岸", "音樂", "新奇"]
+deleteTagsMIRROR    {"fin":"財經", "ind":"財經", "bus":"財經", "money":"財經", "ent":"娛樂"}
 deleteTagsTVBS      ["娛樂", "食尚", "體育"]
 deleteTagsCTWANT    ["娛樂", "財經", "漂亮"]
 deleteTagsEBC       ["娛樂", "健康", "體育", "財經"]
@@ -79,7 +84,7 @@ pip install python-certifi-win32
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
-doShortURL   True
+doShortURL   False
 
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
@@ -218,6 +223,16 @@ if SwitchLTN:
         if printCounterTime:
             print(str(counter) + "  " + newsTime)
             counter +  1
+
+        flagIgnore   False
+        for tags in deleteTagsLTN:
+            if tags in newsLink:
+                print("[自由] 忽略標籤「" + deleteTagsLTN[tags] + "」, 新聞標題為： " + newsTitle)
+                flagIgnore   True
+                break
+
+        if flagIgnore:
+            continue
 
         newsContent2   []
         for content in newsContent:
@@ -611,6 +626,16 @@ if SwitchMIRROR:
             print(str(counter) + "  " + newsTime)
             counter +  1
 
+        flagIgnore   False
+        for tags in deleteTagsMIRROR:
+            if tags in newsLink:
+                print("[鏡週刊] 忽略標籤「" + deleteTagsMIRROR[tags] + "」, 新聞標題為： " + newsTitle)
+                flagIgnore   True
+                break
+        
+        if flagIgnore:
+            continue
+
         newsContents   subSoup.find_all("span", {"data-text":"true"})
         newsContent   ""
         for content in newsContents:
@@ -830,6 +855,12 @@ if SwitchEBC:
             newsContent   str(subSoup.find("div", class_ "raw-style"))
 
             pos   newsContent.find("更多鏡週刊報導")
+            if pos !  -1:
+                newsContent   newsContent[:pos]
+            pos   newsContent.find("往下看更多")
+            if pos !  -1:
+                newsContent   newsContent[:pos]
+            pos   newsContent.find("今日最熱門")
             if pos !  -1:
                 newsContent   newsContent[:pos]
 
