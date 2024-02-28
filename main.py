@@ -1,7 +1,7 @@
 # 0   不爬文 ;  1   爬文
 SwitchLTN       1   # 自由時報 
 SwitchUDN       1   # 聯合新聞網
-SwitchCNA       1   # 中央社
+SwitchCNA       0   # 中央社    # to debug
 SwitchET        1   # ETtoday
 SwitchApple     1   # 壹蘋新聞網
 SwitchSET       1   # 三立新聞網
@@ -84,7 +84,7 @@ pip install python-certifi-win32
 # 是否要印出新聞的編號與時間？ 要 True 不要 False
 printCounterTime   True 
 
-doShortURL   False
+doShortURL   True
 
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
@@ -422,30 +422,10 @@ if SwitchET:
 
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
-        newsContent   subSoup.find_all('p')
+        newsContent   subSoup.find_all("div", class_ "story")
 
-        flagPlace   False
-        flagPerson   False
-        flagIssue   False
-        keywords   set()
-        for paragraph in newsContent:
-            if "分享給朋友" in str(paragraph) or "延伸閱讀" in str(paragraph):
-                break
-
-            for place in places:
-                if place in str(paragraph):
-                    flagPlace   True
-                    keywords.add(place)
-            for person in persons:
-                if person in str(paragraph):
-                    flagPerson   True
-                    keywords.add(person)
-            for issue in issues:
-                if issue in str(paragraph):
-                    flagIssue   True
-                    keywords.add(issue)
-
-        if flagPlace or flagIssue or (flagPlace and flagPerson):
+        keywords   isRelatedNews(str(newsContent))
+        if len(keywords) !  0:
             printResult(newsTitle, "(ETtoday)", newsLink, keywords)
     print("^^^^^^^^^  結束: ETtoday\n")
 
