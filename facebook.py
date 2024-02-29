@@ -1,5 +1,6 @@
+hoursBefore   2  # 限定整數。例如：2，代表要留下「2個小時內有發文的臉書」瀏覽器分頁
 
-urlAndName   [] # 這行不要動
+urlAndName   []  # 這行不要動
 # 以下的可以按照格式新增，如果要暫時「不看」某個臉書，在那一行的開頭加上"#"即可。
 # 每一行的順序即為自動看臉書時的順序
 # 多餘的空白只是為了程式碼美觀，沒有其他功能
@@ -46,6 +47,9 @@ urlAndName.append(("https://facebook.com/TienYaFang                       ", "�
 urlAndName.append(("https://facebook.com/hsmeihui                         ", "南區和原住民 徐美惠"))  # 南區和原住民 徐美惠
 # urlAndName.append(("https://facebook.com/profile.php?id 100002205505005   ", "南區和原住民 林慈愛"))  # 南區和原住民 林慈愛 不是公開的個人專頁，所以看不到內容
 
+########################################################################################
+#    以下內容不要改動！！！
+########################################################################################
 
 import re
 import sys
@@ -120,9 +124,9 @@ for url, name in urlAndName:
                 if "分鐘" in labelContent:
                     flagNewTab   True
                 elif  "小時" in labelContent:
-                    hours   re.findall("\d*", labelContent)[0]
+                    hours   re.findall("\\d*", labelContent)[0]
 
-                    if int(hours) <  2:
+                    if int(hours) <  hoursBefore:
                         flagNewTab   True
                     else:
                         flagNewTab   False
