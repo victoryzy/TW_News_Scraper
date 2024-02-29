@@ -4,48 +4,48 @@ urlAndName   []  # 這行不要動
 # 以下的可以按照格式新增，如果要暫時「不看」某個臉書，在那一行的開頭加上"#"即可。
 # 每一行的順序即為自動看臉書時的順序
 # 多餘的空白只是為了程式碼美觀，沒有其他功能
-urlAndName.append(("https://facebook.com/SanCheng624                      ", "桃園市長 張善政   "))     # 桃園市長 張善政
-urlAndName.append(("https://facebook.com/DrAnnKao                         ", "新竹市長 高虹安   "))     # 新竹市長 高虹安
-urlAndName.append(("https://facebook.com/WKYang.HC                        ", "新竹縣長 楊文科   "))     # 新竹縣長 楊文科
-urlAndName.append(("https://facebook.com/DongJinZhong                     ", "苗栗縣長 鍾東錦   "))     # 苗栗縣長 鍾東錦
-urlAndName.append(("https://facebook.com/hsinchunew                       ", "新竹市政府        "))     # 新竹市政府
-urlAndName.append(("https://facebook.com/CCCHsinchu                       ", "立委 鄭正鈐       "))     # 立委 鄭正鈐
-urlAndName.append(("https://facebook.com/LawyerHandyChiu                  ", "立委 邱顯智       "))     # 立委 邱顯智
-urlAndName.append(("https://facebook.com/kerchenming                      ", "立委 柯建銘       "))     # 立委 柯建銘
-urlAndName.append(("https://facebook.com/woolwooldog2018                  ", "東區 鄭美娟       "))     # 東區 鄭美娟
-urlAndName.append(("https://facebook.com/captainGINAonduty                ", "東區 劉彥伶       "))     # 東區 劉彥伶
-urlAndName.append(("https://facebook.com/ShuYing1012                      ", "東區 鍾淑英       "))     # 東區 鍾淑英
-urlAndName.append(("https://facebook.com/pangyen122525                    ", "東區 余邦彥       "))     # 東區 余邦彥
-urlAndName.append(("https://facebook.com/WenZhengHuangGoGo                ", "東區 黃文政       "))     # 東區 黃文政
-urlAndName.append(("https://facebook.com/NPPSunnyBird                     ", "東區 蔡惠婷       "))     # 東區 蔡惠婷
-urlAndName.append(("https://facebook.com/ChangTsuYen.KMT                  ", "東區 張祖琰       "))     # 東區 張祖琰
-urlAndName.append(("https://facebook.com/ChooseBetterHsinchu              ", "東區 李國璋       "))     # 東區 李國璋
-urlAndName.append(("https://facebook.com/iHsinChu.Liu                     ", "東區 劉崇顯       "))     # 東區 劉崇顯
-urlAndName.append(("https://facebook.com/profile.php?id 100063771856763   ", "東區 曾資程       "))     # 東區 曾資程
-urlAndName.append(("https://facebook.com/profile.php?id 100078702253431   ", "東區 宋品瑩       "))     # 東區 宋品瑩
-urlAndName.append(("https://facebook.com/profile.php?id 100053426403761   ", "東區 段孝芳       "))     # 東區 段孝芳
-urlAndName.append(("https://facebook.com/WuHsuFeng                        ", "北區 吳旭豐       "))     # 北區 吳旭豐
-urlAndName.append(("https://facebook.com/whiteservice225                  ", "北區 劉康彥       "))     # 北區 劉康彥
-urlAndName.append(("https://facebook.com/Hsinchu.LingYi                   ", "北區 楊玲宜       "))     # 北區 楊玲宜
-urlAndName.append(("https://facebook.com/0Yenfu                           ", "北區 林彥甫       "))     # 北區 林彥甫
-urlAndName.append(("https://facebook.com/meihui5336696                    ", "北區 黃美慧       "))     # 北區 黃美慧
-urlAndName.append(("https://facebook.com/profile.php?id 100006838005121   ", "北區 孫錫洲       "))     # 北區 孫錫洲
-urlAndName.append(("https://facebook.com/yao0909                          ", "北區 彭昆耀       "))     # 北區 彭昆耀
-urlAndName.append(("https://facebook.com/market.chingchin                 ", "北區 鄭慶欽       "))     # 北區 鄭慶欽
-urlAndName.append(("https://facebook.com/profile.php?id 100002200637947   ", "北區 蕭志潔       "))     # 北區 蕭志潔
-urlAndName.append(("https://facebook.com/passionhsinchu                   ", "西區 陳建名       "))     # 西區 陳建名
-urlAndName.append(("https://facebook.com/a0932937349                      ", "西區 陳治雄       "))     # 西區 陳治雄
-urlAndName.append(("https://facebook.com/Taiwanbigear                     ", "香山區 林盈徹     "))     # 香山區 林盈徹
-urlAndName.append(("https://facebook.com/ChenChiYuanGoGoGo                ", "香山區 陳啓源     "))     # 香山區 陳啓源
-urlAndName.append(("https://facebook.com/people/吳國寶/1734388582          ", "香山區 吳國寶     "))     # 香山區 吳國寶
-urlAndName.append(("https://facebook.com/SiangshanForward                 ", "香山區 廖子齊     "))     # 香山區 廖子齊
-urlAndName.append(("https://facebook.com/ChingLing0828                    ", "香山區 陳慶齡     "))     # 香山區 陳慶齡
-urlAndName.append(("https://facebook.com/profile.php?id 100006637456112   ", "香山區 鄭成光     "))     # 香山區 鄭成光
-urlAndName.append(("https://facebook.com/ashiugo                          ", "南區和原住民 許修睿"))  # 南區和原住民 許修睿
-urlAndName.append(("https://facebook.com/9.so.good                        ", "南區和原住民 施乃如"))  # 南區和原住民 施乃如
-urlAndName.append(("https://facebook.com/TienYaFang                       ", "南區和原住民 田雅芳"))  # 南區和原住民 田雅芳
-urlAndName.append(("https://facebook.com/hsmeihui                         ", "南區和原住民 徐美惠"))  # 南區和原住民 徐美惠
-# urlAndName.append(("https://facebook.com/profile.php?id 100002205505005   ", "南區和原住民 林慈愛"))  # 南區和原住民 林慈愛 不是公開的個人專頁，所以看不到內容
+urlAndName.append(("https://facebook.com/SanCheng624                      ", "桃園市長 張善政   "))
+urlAndName.append(("https://facebook.com/DrAnnKao                         ", "新竹市長 高虹安   "))
+urlAndName.append(("https://facebook.com/WKYang.HC                        ", "新竹縣長 楊文科   "))
+urlAndName.append(("https://facebook.com/DongJinZhong                     ", "苗栗縣長 鍾東錦   "))
+urlAndName.append(("https://facebook.com/hsinchunew                       ", "新竹市政府        "))
+urlAndName.append(("https://facebook.com/CCCHsinchu                       ", "立委 鄭正鈐       "))
+urlAndName.append(("https://facebook.com/LawyerHandyChiu                  ", "立委 邱顯智       "))
+urlAndName.append(("https://facebook.com/kerchenming                      ", "立委 柯建銘       "))
+urlAndName.append(("https://facebook.com/woolwooldog2018                  ", "東區 鄭美娟       "))
+urlAndName.append(("https://facebook.com/captainGINAonduty                ", "東區 劉彥伶       "))
+urlAndName.append(("https://facebook.com/ShuYing1012                      ", "東區 鍾淑英       "))
+urlAndName.append(("https://facebook.com/pangyen122525                    ", "東區 余邦彥       "))
+urlAndName.append(("https://facebook.com/WenZhengHuangGoGo                ", "東區 黃文政       "))
+urlAndName.append(("https://facebook.com/NPPSunnyBird                     ", "東區 蔡惠婷       "))
+urlAndName.append(("https://facebook.com/ChangTsuYen.KMT                  ", "東區 張祖琰       "))
+urlAndName.append(("https://facebook.com/ChooseBetterHsinchu              ", "東區 李國璋       "))
+urlAndName.append(("https://facebook.com/iHsinChu.Liu                     ", "東區 劉崇顯       "))
+urlAndName.append(("https://facebook.com/profile.php?id 100063771856763   ", "東區 曾資程       "))
+urlAndName.append(("https://facebook.com/profile.php?id 100078702253431   ", "東區 宋品瑩       "))
+urlAndName.append(("https://facebook.com/profile.php?id 100053426403761   ", "東區 段孝芳       "))
+urlAndName.append(("https://facebook.com/WuHsuFeng                        ", "北區 吳旭豐       "))
+urlAndName.append(("https://facebook.com/whiteservice225                  ", "北區 劉康彥       "))
+urlAndName.append(("https://facebook.com/Hsinchu.LingYi                   ", "北區 楊玲宜       "))
+urlAndName.append(("https://facebook.com/0Yenfu                           ", "北區 林彥甫       "))
+urlAndName.append(("https://facebook.com/meihui5336696                    ", "北區 黃美慧       "))
+urlAndName.append(("https://facebook.com/profile.php?id 100006838005121   ", "北區 孫錫洲       "))
+urlAndName.append(("https://facebook.com/yao0909                          ", "北區 彭昆耀       "))
+urlAndName.append(("https://facebook.com/market.chingchin                 ", "北區 鄭慶欽       "))
+urlAndName.append(("https://facebook.com/profile.php?id 100002200637947   ", "北區 蕭志潔       "))
+urlAndName.append(("https://facebook.com/passionhsinchu                   ", "西區 陳建名       "))
+urlAndName.append(("https://facebook.com/a0932937349                      ", "西區 陳治雄       "))
+urlAndName.append(("https://facebook.com/Taiwanbigear                     ", "香山區 林盈徹     "))
+urlAndName.append(("https://facebook.com/ChenChiYuanGoGoGo                ", "香山區 陳啓源     "))
+urlAndName.append(("https://facebook.com/people/吳國寶/1734388582          ", "香山區 吳國寶     "))
+urlAndName.append(("https://facebook.com/SiangshanForward                 ", "香山區 廖子齊     "))
+urlAndName.append(("https://facebook.com/ChingLing0828                    ", "香山區 陳慶齡     "))
+urlAndName.append(("https://facebook.com/profile.php?id 100006637456112   ", "香山區 鄭成光     "))
+urlAndName.append(("https://facebook.com/ashiugo                          ", "南區和原住民 許修睿"))
+urlAndName.append(("https://facebook.com/9.so.good                        ", "南區和原住民 施乃如"))
+urlAndName.append(("https://facebook.com/TienYaFang                       ", "南區和原住民 田雅芳"))
+urlAndName.append(("https://facebook.com/hsmeihui                         ", "南區和原住民 徐美惠"))
+# urlAndName.append(("https://facebook.com/profile.php?id 100002205505005   ", "南區和原住民 林慈愛"))  # 不是公開的個人專頁，所以看不到內容
 
 ########################################################################################
 #    以下內容不要改動！！！
