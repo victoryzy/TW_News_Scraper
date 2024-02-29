@@ -4,6 +4,8 @@ urlAndName   []  # 這行不要動
 # 以下的可以按照格式新增，如果要暫時「不看」某個臉書，在那一行的開頭加上"#"即可。
 # 每一行的順序即為自動看臉書時的順序
 # 多餘的空白只是為了程式碼美觀，沒有其他功能
+urlAndName.append(("https://facebook.com/savefirefighters                 ", "搶救消防員       "))
+urlAndName.append(("https://facebook.com/profile.php?id 100087552498464   ", "靠北消防3.0      "))
 urlAndName.append(("https://facebook.com/SanCheng624                      ", "桃園市長 張善政   "))
 urlAndName.append(("https://facebook.com/DrAnnKao                         ", "新竹市長 高虹安   "))
 urlAndName.append(("https://facebook.com/WKYang.HC                        ", "新竹縣長 楊文科   "))
@@ -62,7 +64,7 @@ from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
 
 scrollPages   1
-scrollDelay   1
+scrollDelay   2.5
 
 def getSoupFromURL(url, scrollPages, scrollDelay):
     driver.get(url)
