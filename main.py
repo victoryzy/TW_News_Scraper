@@ -18,7 +18,7 @@ SwitchEBC       1   # 東森新聞
 scrollPages   1   
 timeSlot      1.0   # 收集幾個小時內的新聞
 
-scrollDelay   2.5   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   3.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places   ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
@@ -64,7 +64,7 @@ from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
-
+from selenium.common.exceptions import NoSuchElementException
 #############################################################
 """
 1. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
@@ -860,7 +860,7 @@ if not doShortURL:
 
 print("#####################################")
 print("    網頁爬蟲部分正常結束，開始縮網址。")
-print("#####################################\n")
+print("#####################################")
 # To indicate termination
 newsInfoQueue.put(None)
 
@@ -868,40 +868,60 @@ url   "https://tinyurl.com/app"
 driver.get(url)
 soup   BeautifulSoup(driver.page_source,"html.parser")
 
-programStartTime   datetime.now()
-
-counter   1
+counter   0
+getNextNews   True
 with open(resultFilename, 'w', encoding 'UTF-8') as f:
     while True:
-        newsInfo   newsInfoQueue.get()
+        driver.get(url)
+
+        time.sleep(3)
+
+        if getNextNews:
+            newsInfo   newsInfoQueue.get()
+            counter +  1
 
         if newsInfo    None:
             f.write("                                         \n")
             f.write("開始執行時間：" + str(programStartTime) + "\n")
             f.write("執行結束時間：" + str(datetime.now()) + "\n")
             f.write("抓取 " + str(timeSlot) + " 個小時內的新聞\n")
-            f.write("總共有 " + str(counter - 1) + " 則相關新聞\n")
+            f.write("總共有 " + str(counter) + " 則相關新聞\n")
             break
         
-        counter +  1
-        f.write(". " + newsInfo[0] + "\n")
         longUrl   str(newsInfo[1])
 
         # paste long url
-        driver.find_element(By.ID,'long-url').send_keys(longUrl)
-        time.sleep(2)
+        try:
+            driver.find_element(By.ID,'long-url').send_keys(longUrl)
+        except NoSuchElementException:
+            print("[ERROR] 找不到長網址input")
+            getNextNews   False
+            continue
+        time.sleep(3)
 
         # generate short url
-        driver.find_element(By.XPATH, "//button[@data-test-id 'home_shortener_btn_create']").click()
-        time.sleep(2)
+        try:
+            driver.find_element(By.XPATH, "//button[@data-test-id 'home_shortener_btn_create']").click()
+        except NoSuchElementException:
+            print("[ERROR] 找不到縮網址按鈕")
+            getNextNews   False
+            continue
+        time.sleep(3)
 
         # copy short url
-        shortURL   driver.find_element(By.ID,"homepage_create_tinyurl_form_created_input").get_attribute("value")
-        time.sleep(1)
-        f.write(str(shortURL) + "\n")
+        try:
+            shortURL   driver.find_element(By.ID,"homepage_create_tinyurl_form_created_input").get_attribute("value")
+        except NoSuchElementException:
+            print("[ERROR] 找不到複製短網址按鈕")
+            getNextNews   False
+            continue 
+        time.sleep(3)
 
-        # return to original page for another iteration
-        driver.find_element(By.XPATH, "//button[@id 'homepage_create_tinyurl_form_shorten_another_btn']").click()
+        getNextNews   True
+        print(". " + newsInfo[0])
+        print(str(shortURL))
+        f.write(". " + newsInfo[0] + "\n")
+        f.write(str(shortURL) + "\n")
 
 print("#####################################")
 print("    縮網址部分正常結束，請開啟 " + resultFilename + " 檢視新聞")
