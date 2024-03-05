@@ -68,6 +68,7 @@ scrollDelay   2.5
 
 def getSoupFromURL(url, scrollPages, scrollDelay):
     driver.get(url)
+    time.sleep(scrollDelay)
     closeX   driver.find_element(By.XPATH, '//div[@aria-label "關閉"]')
     closeX.click()
     for x in range(0, scrollPages):
