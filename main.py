@@ -32,7 +32,7 @@ issueAccident   ["車禍", "地震", "墜橋", "輾斃", "墜落", "山難", "�
 issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救"]
 issueGoods   ["AED", "住警器", "消防栓"]
 issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺"]
-issueStatus   ["死亡", "喪命", "喪生", "失蹤", "傷者", "遺體", 
+issueStatus   ["喪命", "喪生", "失蹤", "傷者", "遺體", 
                "死者", "殉職", "失聯", "嗆暈", "意識模糊", 
                "命危", "OHCA", "無生命跡象", "不治", "昏迷",
                "無呼吸心跳", "受困", "罹難", "無意識"]
@@ -184,7 +184,7 @@ def printResult(newsTitle, source, newsLink, keywords):
     if "竹市" in keywords:
         newsTitle   "(本市)" + str(newsTitle) 
 
-    newsInfoQueue.put((newsTitle+ source, newsLink))
+    newsInfoQueue.put((newsTitle+ source, newsLink, keywords))
 
 #################################################################################
 
@@ -423,6 +423,8 @@ if SwitchET:
         subResult   requests.get(newsLink)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
         newsContent   subSoup.find_all("div", class_ "story")
+        pos   str(newsContent).find("其他新聞")
+        newsContent   str(newsContent)[:pos-1]
 
         keywords   isRelatedNews(str(newsContent))
         if len(keywords) !  0:
@@ -912,7 +914,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         try:
             shortURL   driver.find_element(By.ID,"homepage_create_tinyurl_form_created_input").get_attribute("value")
         except NoSuchElementException:
-            print("[ERROR] 找不到複製短網址按鈕")
+            print("[ERROR] 找不到短網址內容")
             getNextNews   False
             continue 
         time.sleep(3)
@@ -920,11 +922,12 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         getNextNews   True
         print(". " + newsInfo[0])
         print(str(shortURL))
+        print(newsInfo[2])
         f.write(". " + newsInfo[0] + "\n")
         f.write(str(shortURL) + "\n")
 
 print("#####################################")
-print("    縮網址部分正常結束，請開啟 " + resultFilename + " 檢視新聞")
+print("   網頁爬蟲與縮網址部分正常結束，請開啟 " + resultFilename + " 檢視新聞")
 print("#####################################")
 
 driver.close()
