@@ -1,7 +1,6 @@
 # 0   不爬文 ;  1   爬文
 SwitchLTN       1   # 自由時報 
 SwitchUDN       1   # 聯合新聞網
-SwitchCNA       0   # 中央社    # to debug
 SwitchET        1   # ETtoday
 SwitchApple     1   # 壹蘋新聞網
 SwitchSET       1   # 三立新聞網
@@ -11,35 +10,36 @@ SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
 
+SwitchCNA       0   # 中央社    # to debug
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
 timeSlot      1.0   # 收集幾個小時內的新聞
-
 scrollDelay   3.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
-places   ["竹市", "消防局", "消防署", "竹塹"]
+places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
-           "義消", "義警消", "搜救人員", "救護技術員",  "消促會", "工作權益促進會"]
-issues   ["災情",  "救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒"]
+           "義消", "義警消", "搜救人員", "救護技術員", "消促會", "工作權益促進會"]
+issues    ["災情", "救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒"]
 
-issueFire   ["火災", "失火", "起火", "大火", "火光", "火燒車",
-             "水線", "滅火器", "火海", "打火", "灌救",
-             "火調", "燒毀", "火警", "燒起來", "雲梯車"]
-issueAccident   ["車禍", "地震", "墜橋", "輾斃", "墜落", "山難", "瓦斯外洩", "強震", "土石流"]
 issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救"]
-issueGoods   ["AED", "住警器", "消防栓"]
-issueSuicide   ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺"]
-issueStatus   ["喪命", "喪生", "失蹤", "傷者", "遺體", 
-               "死者", "殉職", "失聯", "嗆暈", "意識模糊", 
-               "命危", "OHCA", "無生命跡象", "不治", "昏迷",
-               "無呼吸心跳", "受困", "罹難", "無意識"]
+issueGoods      ["AED", "住警器", "消防栓"]
+issueSuicide    ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺"]
+issueFire       ["火災", "失火", "起火", "大火", "火光", "火燒車",
+                 "水線", "滅火器", "火海", "打火", "灌救",
+                 "火調", "燒毀", "火警", "燒起來", "雲梯車"]
+issueAccident   ["車禍", "地震深度", "最大震度", "芮氏規模", "有感地震",
+                 "墜橋", "輾斃", "墜樓", "山難", "瓦斯外洩", "土石流"]
+issueStatus     ["喪命", "喪生", "失蹤", "傷者", "遺體", "無生命跡象",
+                 "死者", "殉職", "失聯", "嗆暈", "意識模糊", "無意識",
+                 "命危", "OHCA", "不治", "昏迷", "受困", "罹難",
+                 "無呼吸心跳"]
 
-deleteTagsLTN   {"ent":"娛樂", "istyle":"時尚", "sports":"體育", "ec":"財經", "def":"軍武",
-             "3c":"3C", "art.ltn":"藝文", "playing":"玩咖", "food":"食譜", "estate":"地產",
-             "yes123":"求職", "auto":"汽車"}
+deleteTagsLTN       {"ent":"娛樂", "istyle":"時尚", "sports":"體育", "ec":"財經", 
+                     "def":"軍武", "3c":"3C", "art.ltn":"藝文", "playing":"玩咖",
+                     "food":"食譜", "estate":"地產", "yes123":"求職", "auto":"汽車"}
 deleteTagsUDN       ["娛樂", "股市", "產經", "運動", "科技", "文教", "健康"]
 deleteTagsCNA       ["娛樂", "產經", "證券", "科技", "文化", "運動"]
 deleteTagsETtoday   ["旅遊", "房產雲", "影劇", "時尚", "財經", "寵物動物", "ET車雲"]
@@ -52,6 +52,7 @@ deleteTagsEBC       ["娛樂", "健康", "體育", "財經"]
 #############################################################
 #   以下內容不要修改
 #############################################################
+doShortURL   True
 
 import re
 import sys
@@ -80,11 +81,6 @@ pip install pip-system-certs      # 後來中央社不做SSL認證，cert相關�
 pip install python-certifi-win32
 
 """
-
-# 是否要印出新聞的編號與時間？ 要 True 不要 False
-printCounterTime   True 
-
-doShortURL   True
 
 newsInfoQueue   Queue()
 issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issueSuicide + issueStatus
@@ -136,7 +132,7 @@ sys.stdout   Logger()
 sys.stderr   sys.stdout
 
 #################################################################################
-def isRelatedNews(content):
+def getKeywordInNews(content):
     flagPlace   False
     flagPerson   False
     flagIssue   False
@@ -186,16 +182,44 @@ def printResult(newsTitle, source, newsLink, keywords):
 
     newsInfoQueue.put((newsTitle+ source, newsLink, keywords))
 
+def getLinksFromURL(url, pressName):
+    soup   getSoupFromURL(url, scrollPages, scrollDelay)
+
+    if pressName    "LTN":
+        return soup.find_all("a", class_ "tit")
+    if pressName    "UDN":
+        return soup.find_all('div', class_ "story-list__text")
+    if pressName    "CNA":
+        return soup.find_all('ul', class_ "mainList imgModule")
+    if pressName    "ETtoday":
+        return soup.find_all('div', class_ "part_list_2")[0].findAll("h3")
+    if pressName    "Apple":
+        return soup.find_all('article', class_ "post-style3 infScroll postCount")
+    if pressName    "SET":
+        return soup.find_all("div", class_ "col-sm-12 newsItems")
+    if pressName    "Mirror":
+        return soup.find_all("a", target "_blank")
+    if pressName    "TVBS":
+        return soup.find_all("li")
+
+def getSubsoupFromURL(newsLink):
+    subResult   requests.get(newsLink)
+    subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+    for s in subSoup.select("script"):
+        s.extract()
+    for s in subSoup.select("style"):
+        s.extract()
+
+    return subSoup
+
 #################################################################################
 
 # 自由時報 即時新聞總覽
 if SwitchLTN:
     print("vvvvvvvvv  開始: 自由時報")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://news.ltn.com.tw/list/breakingnews"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay)
-    links   soup.find_all('a', class_ "tit")
+    links   getLinksFromURL("https://news.ltn.com.tw/list/breakingnews", "LTN")
 
     counter   1
     for link in links:
@@ -203,8 +227,7 @@ if SwitchLTN:
         newsTitle   str(link.find("h3", class_ "title").contents[0])
         newsLink   str(link['href'])
 
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        subSoup   getSubsoupFromURL(newsLink)
 
         newsContent   subSoup.find_all('p')
 
@@ -220,14 +243,12 @@ if SwitchLTN:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + "  " + newsTime)
-            counter +  1
+        print(str(counter) + "  " + newsTime)
+        counter +  1
 
         flagIgnore   False
         for tags in deleteTagsLTN:
             if tags in newsLink:
-                print("[自由] 忽略標籤「" + deleteTagsLTN[tags] + "」, 新聞標題為： " + newsTitle)
                 flagIgnore   True
                 break
 
@@ -241,7 +262,7 @@ if SwitchLTN:
             else:
                 break
         
-        keywords   isRelatedNews(str(newsContent2))
+        keywords   getKeywordInNews(str(newsContent2))
 
         if len(keywords) !  0:
             printResult(newsTitle, "（自由）", newsLink, keywords)
@@ -253,10 +274,7 @@ if SwitchLTN:
 if SwitchUDN:
     print("vvvvvvvvv  開始: 聯合新聞網")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://udn.com/news/breaknews"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay)
-    links   soup.find_all('div', class_ "story-list__text")
+    links   getLinksFromURL("https://udn.com/news/breaknews", "UDN")
 
     counter   1
     for link in links:
@@ -288,27 +306,19 @@ if SwitchUDN:
         else:
             newsTime   str(newsTime[1]) # Skip comment in html
 
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
-        for s in subSoup.select("style"):
-            s.extract()
-        for s in subSoup.select("script"):
-            s.extract()
-
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + " " + str(newsTime))
-            counter +  1
+        print(str(counter) + " " + str(newsTime))
+        counter +  1
 
+        subSoup   getSubsoupFromURL(newsLink)
         contents   subSoup.find_all('section', class_ "article-content__wrapper")
 
         newsTag   subSoup.find("nav", class_ "article-content__breadcrumb")
         if newsTag is not None:
             newsTag   newsTag.contents[3].contents[0]
             if newsTag in deleteTagsUDN:
-                print("[聯合] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
                 continue
 
         newsContent   ""
@@ -323,7 +333,7 @@ if SwitchUDN:
                     newsContent   str(div)[:pos-1]
                     break
 
-        keywords   isRelatedNews(newsContent)
+        keywords   getKeywordInNews(newsContent)
 
         if len(keywords) !  0:
             printResult(newsTitle, "（聯合）", newsLink, keywords)
@@ -335,10 +345,7 @@ if SwitchUDN:
 if SwitchCNA:
     print("vvvvvvvvv  開始: 中央社")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://cna.com.tw/list/aall.aspx"
-    soup   getSoupFromURL(url, 0, 4)
-    links   soup.find_all('ul', class_ "mainList imgModule")
+    links   getLinksFromURL("https://cna.com.tw/list/aall.aspx", "CNA")
 
     counter   1
     for link in links[0]:
@@ -353,9 +360,8 @@ if SwitchCNA:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + " " + newsTime)
-            counter +  1
+        print(str(counter) + " " + newsTime)
+        counter +  1
 
         time.sleep(3)
         subResult   requests.get(newsLink, headers headers)
@@ -363,7 +369,6 @@ if SwitchCNA:
 
         newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
         if newsTag in deleteTagsCNA:
-            print("[中央社] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
         for s in subSoup.select("script"):
@@ -378,7 +383,7 @@ if SwitchCNA:
         if len(str(newsContent))    0:
             print("[ERROR] 中央社 新聞內文沒有抓到")
 
-        keywords   isRelatedNews(str(newsContent))
+        keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
             printResult(newsTitle, "（中央社）", newsLink, keywords)
@@ -390,10 +395,7 @@ if SwitchCNA:
 if SwitchET:
     print("vvvvvvvvv  開始: ETtoday")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://ettoday.net/news/news-list.htm"
-    soup   getSoupFromURL(url, 0, scrollDelay)
-    links   soup.find_all('div', class_ "part_list_2")[0].findAll("h3")
+    links   getLinksFromURL("https://ettoday.net/news/news-list.htm", "ETtoday")
 
     counter   1
     for link in links:
@@ -411,22 +413,19 @@ if SwitchET:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + " " + newsTime)
-            counter +  1
+        print(str(counter) + " " + newsTime)
+        counter +  1
 
         newsTag   str(link.find("em").contents[0])
         if newsTag in deleteTagsETtoday:
-            print("[ETtoday] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        subSoup   getSubsoupFromURL(newsLink)
         newsContent   subSoup.find_all("div", class_ "story")
         pos   str(newsContent).find("其他新聞")
         newsContent   str(newsContent)[:pos-1]
 
-        keywords   isRelatedNews(str(newsContent))
+        keywords   getKeywordInNews(str(newsContent))
         if len(keywords) !  0:
             printResult(newsTitle, "(ETtoday)", newsLink, keywords)
     print("^^^^^^^^^  結束: ETtoday\n")
@@ -437,10 +436,7 @@ if SwitchET:
 if SwitchApple:
     print("vvvvvvvvv  開始: 壹蘋新聞網")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://tw.nextapple.com/realtime/latest"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay)
-    links   soup.find_all('article', class_ "post-style3 infScroll postCount")
+    links   getLinksFromURL("https://tw.nextapple.com/realtime/latest", "Apple")
 
     counter   1
     for link in links:
@@ -453,28 +449,20 @@ if SwitchApple:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + " " + newsTime)
-            counter +  1
+        print(str(counter) + " " + newsTime)
+        counter +  1
 
         if newsTag in deleteTagsApple:
-            print("[壹蘋新聞網] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
-
-        for s in subSoup.select("script"):
-            s.extract()
-        for s in subSoup.select("a"):
-            s.extract()
+        subSoup   getSubsoupFromURL(newsLink)
 
         newsContents   subSoup.find_all("div", class_ "post-content")
         newsContent   subSoup.find_all("blockquote")
         newsContent +  newsContents[0].findAll("p")
         newsContent +  newsContents[0].findAll("figcaption")
 
-        keywords   isRelatedNews(str(newsContent))
+        keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
             printResult(newsTitle, "(壹蘋新聞網)", newsLink, keywords)
@@ -486,10 +474,7 @@ if SwitchApple:
 if SwitchSET:
     print("vvvvvvvvv  開始: 三立新聞")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://setn.com/viewall.aspx"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay)
-    links   soup.find_all("div", class_ "col-sm-12 newsItems")
+    links   getLinksFromURL("https://setn.com/viewall.aspx", "SET")
 
     counter   1
     for link in links:
@@ -502,11 +487,8 @@ if SwitchSET:
         newsLink   newsLink.replace("&utm_campaign viewallnews", "")
         newsLink   newsLink.replace("?utm_campaign viewallnews", "")
         newsTitle   str(linkAndTitle.contents[0])
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
-        for s in subSoup.select("script"):
-            s.extract()
+        subSoup   getSubsoupFromURL(newsLink)
 
         newsTime   subSoup.find("time", class_ "page_date")
 
@@ -530,13 +512,11 @@ if SwitchSET:
         if not isInTimeRange(newsTimeStr, "%Y/%m/%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + "  " + newsTimeStr)
-            counter +  1
+        print(str(counter) + "  " + newsTimeStr)
+        counter +  1
 
         newsTag   link.find("div", class_ "newslabel-tab").contents[0].contents[0]
         if newsTag in deleteTagsSET:
-            print("[三立新聞] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
         newsContent   subSoup.find_all("div", id "Content1")
@@ -545,7 +525,7 @@ if SwitchSET:
         if newsContent is None or len(newsContent)    0:
             newsContent   subSoup.find_all("div", class_ "page-text")
 
-        keywords   isRelatedNews(str(newsContent))
+        keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
             printResult(newsTitle, "（三立）", newsLink, keywords)
@@ -557,10 +537,7 @@ if SwitchSET:
 if SwitchMIRROR:
     print("vvvvvvvvv  開始: 鏡週刊")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://mirrormedia.mg/category/news"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay+1.5)
-    links   soup.find_all("a", target "_blank")
+    links   getLinksFromURL("https://mirrormedia.mg/category/news", "Mirror")
 
     counter   1
     for link in links:
@@ -604,14 +581,12 @@ if SwitchMIRROR:
         if not isInTimeRange(newsTime, "%Y.%m.%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + "  " + newsTime)
-            counter +  1
+        print(str(counter) + "  " + newsTime)
+        counter +  1
 
         flagIgnore   False
         for tags in deleteTagsMIRROR:
             if tags in newsLink:
-                print("[鏡週刊] 忽略標籤「" + deleteTagsMIRROR[tags] + "」, 新聞標題為： " + newsTitle)
                 flagIgnore   True
                 break
         
@@ -623,7 +598,7 @@ if SwitchMIRROR:
         for content in newsContents:
             newsContent +  str(content.contents[0])
 
-        keywords   isRelatedNews(newsContent)
+        keywords   getKeywordInNews(newsContent)
 
         if len(keywords) !  0:
             printResult(newsTitle, "（鏡週刊）", newsLink, keywords)
@@ -635,10 +610,7 @@ if SwitchMIRROR:
 if SwitchTVBS:
     print("vvvvvvvvv  開始: TVBS")
     earlier   datetime.now() - timedelta(hours timeSlot)
-
-    url   "https://news.tvbs.com.tw/realtime"
-    soup   getSoupFromURL(url, scrollPages, scrollDelay)
-    links   soup.find_all("li")
+    links   getLinksFromURL("https://news.tvbs.com.tw/realtime", "TVBS")
 
     counter   1
     for link in links:
@@ -649,8 +621,7 @@ if SwitchTVBS:
         newsLink   "https://news.tvbs.com.tw" + str(link.find("a")["href"])
         newsTitle   str(link.find("h2").contents[0])
 
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        subSoup   getSubsoupFromURL(newsLink)
 
         authorAndTime   subSoup.find_all("div", class_ "author")
         authorAndTime   str(authorAndTime[0])
@@ -660,20 +631,18 @@ if SwitchTVBS:
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
         
-        if printCounterTime:
-            print(str(counter) + "  " + newsTime)
-            counter +  1
+        print(str(counter) + "  " + newsTime)
+        counter +  1
 
         newsTag   link.find("div", class_ "type").contents[0]
         if newsTag in deleteTagsTVBS:
-            print("[TVBS] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
             continue
 
         for s in subSoup.select("script"):
             s.extract()
 
         newsContents   subSoup.find_all("div", class_ "article_content", id "news_detail_div")
-        keywords   isRelatedNews(str(newsContents))
+        keywords   getKeywordInNews(str(newsContents))
 
         if len(keywords) !  0:
             printResult(newsTitle, "（TVBS）", newsLink, keywords)
@@ -708,18 +677,13 @@ if SwitchNOWNEWS:
         newsLink   str(link.find("a")["href"])
         newsTime   str(link.find("p", class_ "time").contents[-1])
 
-        subResult   requests.get(newsLink)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
-
-        for s in subSoup.select("script"):
-            s.extract()
-
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
-        if printCounterTime:
-            print(str(counter) + "  " + newsTime)
-            counter +  1
+        print(str(counter) + "  " + newsTime)
+        counter +  1
+
+        subSoup   getSubsoupFromURL(newsLink)
 
         newsBody   subSoup.find_all("article")  
         if newsBody is None or len(newsBody)    0:
@@ -737,7 +701,7 @@ if SwitchNOWNEWS:
 
             contentStr +  str(content)
 
-        keywords   isRelatedNews(contentStr)
+        keywords   getKeywordInNews(contentStr)
 
         if len(keywords) !  0:
             printResult(newsTitle, "（NOWNEWS）", newsLink, keywords)
@@ -768,25 +732,22 @@ if SwitchCTWANT:
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
                 break
 
-            subResult   requests.get(newsLink)
-            subSoup   BeautifulSoup(subResult.text, features "html.parser")
+            subSoup   getSubsoupFromURL(newsLink)
             newsContent   subSoup.find("div", class_ "p-article__content")
 
-            if printCounterTime:
-                print(str(counter) + " " + newsTime)
-                counter +  1
+            print(str(counter) + " " + newsTime)
+            counter +  1
 
             newsTag   subSoup.find("div", class_ "e-category__main").contents[0]
             newsTag   newsTag.replace(" ", "").replace("\n", "")
             if newsTag in deleteTagsCTWANT:
-                print("[CTWANT] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
                 continue
 
             buttons   newsContent.findAll("button")
             for button in buttons:
                 button.extract()
 
-            keywords   isRelatedNews(str(newsContent))
+            keywords   getKeywordInNews(str(newsContent))
 
             if len(keywords) !  0:
                 printResult(newsTitle, "（CTWANT）", newsLink, keywords)
@@ -831,7 +792,6 @@ if SwitchEBC:
             counter +  1
 
             if newsTag in deleteTagsEBC:
-                print("[東森] 忽略標籤「" + newsTag + "」, 新聞標題為： " + newsTitle)
                 continue
 
             newsContent   str(subSoup.find("div", class_ "raw-style"))
@@ -846,7 +806,7 @@ if SwitchEBC:
             if pos !  -1:
                 newsContent   newsContent[:pos]
 
-            keywords   isRelatedNews(newsContent)
+            keywords   getKeywordInNews(newsContent)
 
             if len(keywords) !  0:
                 printResult(newsTitle, "（東森）", newsLink, keywords)
@@ -859,22 +819,20 @@ if not doShortURL:
     exit()
 
 # tinyurl縮網址
-
 print("#####################################")
 print("    網頁爬蟲部分正常結束，開始縮網址。")
 print("#####################################")
-# To indicate termination
-newsInfoQueue.put(None)
+newsInfoQueue.put(None) # To indicate termination
 
-url   "https://tinyurl.com/app"
-driver.get(url)
+tinyurl   "https://tinyurl.com/app"
+driver.get(tinyurl)
 soup   BeautifulSoup(driver.page_source,"html.parser")
 
 counter   0
 getNextNews   True
 with open(resultFilename, 'w', encoding 'UTF-8') as f:
     while True:
-        driver.get(url)
+        driver.get(tinyurl)
 
         time.sleep(3)
 
@@ -887,7 +845,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             f.write("開始執行時間：" + str(programStartTime) + "\n")
             f.write("執行結束時間：" + str(datetime.now()) + "\n")
             f.write("抓取 " + str(timeSlot) + " 個小時內的新聞\n")
-            f.write("總共有 " + str(counter) + " 則相關新聞\n")
+            f.write("總共有 " + str(counter - 1) + " 則相關新聞\n")
             break
         
         longUrl   str(newsInfo[1])
