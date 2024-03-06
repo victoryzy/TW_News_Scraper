@@ -1,12 +1,12 @@
 # 0   不爬文 ;  1   爬文
-SwitchLTN       0   # 自由時報 
-SwitchUDN       0   # 聯合新聞網
-SwitchET        0   # ETtoday
-SwitchApple     0   # 壹蘋新聞網
-SwitchSET       0   # 三立新聞網
-SwitchMIRROR    0   # 鏡週刊 
-SwitchTVBS      0   # TVBS
-SwitchNOWNEWS   0   # NOWNEWS
+SwitchLTN       1   # 自由時報 
+SwitchUDN       1   # 聯合新聞網
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
+SwitchSET       1   # 三立新聞網
+SwitchMIRROR    1   # 鏡週刊 
+SwitchTVBS      1   # TVBS
+SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
 
@@ -17,7 +17,7 @@ SwitchCNA       0   # 中央社    # to debug
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
 timeSlot      1.0   # 收集幾個小時內的新聞
-scrollDelay   3.0   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   2.5   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
@@ -201,6 +201,9 @@ def getLinksFromURL(url, pressName):
         return soup.find_all("a", target "_blank")
     if pressName    "TVBS":
         return soup.find_all("li")
+    if pressName    "EBC":
+        links   soup.find_all("div", class_ "news-list-box")
+        return links[0].find_all("div", class_ "style1 white-box")
 
 def getSubsoupFromURL(newsLink):
     subResult   requests.get(newsLink)
@@ -224,12 +227,8 @@ if SwitchLTN:
     counter   1
     for link in links:
         time.sleep(0.2)
-        newsTitle   str(link.find("h3", class_ "title").contents[0])
         newsLink   str(link['href'])
-
         subSoup   getSubsoupFromURL(newsLink)
-
-        newsContent   subSoup.find_all('p')
 
         newsTimes   subSoup.find_all("span", class_ "time")
         if len(newsTimes)    0:
@@ -255,6 +254,7 @@ if SwitchLTN:
         if flagIgnore:
             continue
 
+        newsContent   subSoup.find_all('p')
         newsContent2   []
         for content in newsContent:
             if "不用抽" not in str(content):
@@ -265,6 +265,7 @@ if SwitchLTN:
         keywords   getKeywordInNews(str(newsContent2))
 
         if len(keywords) !  0:
+            newsTitle   str(link.find("h3", class_ "title").contents[0])
             printResult(newsTitle, "（自由）", newsLink, keywords)
     print("^^^^^^^^^  結束: 自由時報\n")
 
@@ -305,7 +306,6 @@ if SwitchUDN:
             newsTime   str(newsTime[0])
         else:
             newsTime   str(newsTime[1]) # Skip comment in html
-
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
@@ -354,9 +354,6 @@ if SwitchCNA:
             continue
 
         newsTime   link.find("div", class_ "date").contents[0]
-        newsLink   "https://cna.com.tw" + link.find("a")["href"]
-        newsTitle   str(link.find("span").contents[0])
-
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
@@ -364,6 +361,7 @@ if SwitchCNA:
         counter +  1
 
         time.sleep(3)
+        newsLink   "https://cna.com.tw" + link.find("a")["href"]
         subResult   requests.get(newsLink, headers headers)
         subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
@@ -386,6 +384,7 @@ if SwitchCNA:
         keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
+            newsTitle   str(link.find("span").contents[0])
             printResult(newsTitle, "（中央社）", newsLink, keywords)
     print("^^^^^^^^^  結束: 中央社\n")
 
@@ -400,18 +399,16 @@ if SwitchET:
     counter   1
     for link in links:
         time.sleep(0.2)
+
         newsTime   str(link.find("span", class_ "date").contents[0])
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            break
 
         newsTitle   link.find("a")
         if len(newsTitle)    2:
             newsTitle   newsTitle.contents[1]
         else:
             newsTitle   newsTitle.contents[0]
-
-        newsLink   str(link.find("a")["href"])
-
-        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
-            break
 
         print(str(counter) + " " + newsTime)
         counter +  1
@@ -420,6 +417,7 @@ if SwitchET:
         if newsTag in deleteTagsETtoday:
             continue
 
+        newsLink   str(link.find("a")["href"])
         subSoup   getSubsoupFromURL(newsLink)
         newsContent   subSoup.find_all("div", class_ "story")
         pos   str(newsContent).find("其他新聞")
@@ -441,20 +439,19 @@ if SwitchApple:
     counter   1
     for link in links:
         time.sleep(0.2)
-        newsTitle   link.find("h3").contents[1].contents[0]
-        newsLink    link.find("h3").contents[1]["href"]
-        newsTag     link.find("div", class_ "category").contents[0]
-        newsTime    link.find("time").contents[0]
 
+        newsTime    link.find("time").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
 
         print(str(counter) + " " + newsTime)
         counter +  1
 
+        newsTag     link.find("div", class_ "category").contents[0]
         if newsTag in deleteTagsApple:
             continue
 
+        newsLink    link.find("h3").contents[1]["href"]
         subSoup   getSubsoupFromURL(newsLink)
 
         newsContents   subSoup.find_all("div", class_ "post-content")
@@ -465,6 +462,7 @@ if SwitchApple:
         keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
+            newsTitle   link.find("h3").contents[1].contents[0]
             printResult(newsTitle, "(壹蘋新聞網)", newsLink, keywords)
     print("^^^^^^^^^  結束: 壹蘋新聞網\n")
 
@@ -486,8 +484,6 @@ if SwitchSET:
         
         newsLink   newsLink.replace("&utm_campaign viewallnews", "")
         newsLink   newsLink.replace("?utm_campaign viewallnews", "")
-        newsTitle   str(linkAndTitle.contents[0])
-
         subSoup   getSubsoupFromURL(newsLink)
 
         newsTime   subSoup.find("time", class_ "page_date")
@@ -528,6 +524,7 @@ if SwitchSET:
         keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
+            newsTitle   str(linkAndTitle.contents[0])
             printResult(newsTitle, "（三立）", newsLink, keywords)
     print("^^^^^^^^^  結束: 三立新聞\n")
 
@@ -619,15 +616,12 @@ if SwitchTVBS:
             continue
 
         newsLink   "https://news.tvbs.com.tw" + str(link.find("a")["href"])
-        newsTitle   str(link.find("h2").contents[0])
-
         subSoup   getSubsoupFromURL(newsLink)
 
         authorAndTime   subSoup.find_all("div", class_ "author")
         authorAndTime   str(authorAndTime[0])
         times   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", authorAndTime)
         newsTime   str(times[0])
-
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
         
@@ -645,6 +639,7 @@ if SwitchTVBS:
         keywords   getKeywordInNews(str(newsContents))
 
         if len(keywords) !  0:
+            newsTitle   str(link.find("h2").contents[0])
             printResult(newsTitle, "（TVBS）", newsLink, keywords)
     print("^^^^^^^^^  結束: TVBS\n")
 
@@ -673,18 +668,15 @@ if SwitchNOWNEWS:
         if not isinstance(link, Tag):
             continue
         
-        newsTitle   str(link.find("h3").contents[0])
-        newsLink   str(link.find("a")["href"])
         newsTime   str(link.find("p", class_ "time").contents[-1])
-
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             break
 
         print(str(counter) + "  " + newsTime)
         counter +  1
 
+        newsLink   str(link.find("a")["href"])
         subSoup   getSubsoupFromURL(newsLink)
-
         newsBody   subSoup.find_all("article")  
         if newsBody is None or len(newsBody)    0:
             # 類似地震速報可能會被導到「頁面不存在」，直接跳過不處理
@@ -704,6 +696,7 @@ if SwitchNOWNEWS:
         keywords   getKeywordInNews(contentStr)
 
         if len(keywords) !  0:
+            newsTitle   str(link.find("h3").contents[0])
             printResult(newsTitle, "（NOWNEWS）", newsLink, keywords)
     print("^^^^^^^^^  結束: NOWNEWS\n")
 
@@ -722,27 +715,23 @@ if SwitchCTWANT:
 
         for link in links:
             time.sleep(0.2)
-            newsLink   "https://ctwant.com" + str(link.find("a")["href"])
+
             newsTime   str(link.find("time")["datetime"])
-
-            newsTitle   str(link.find("h2").contents[0])
-            newsTitle   newsTitle.replace("\n", "")
-            newsTitle   newsTitle.replace("  ", "")
-
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
                 break
 
-            subSoup   getSubsoupFromURL(newsLink)
-            newsContent   subSoup.find("div", class_ "p-article__content")
-
             print(str(counter) + " " + newsTime)
             counter +  1
+            
+            newsLink   "https://ctwant.com" + str(link.find("a")["href"])
+            subSoup   getSubsoupFromURL(newsLink)
 
             newsTag   subSoup.find("div", class_ "e-category__main").contents[0]
             newsTag   newsTag.replace(" ", "").replace("\n", "")
             if newsTag in deleteTagsCTWANT:
                 continue
 
+            newsContent   subSoup.find("div", class_ "p-article__content")
             buttons   newsContent.findAll("button")
             for button in buttons:
                 button.extract()
@@ -754,6 +743,7 @@ if SwitchCTWANT:
             keywords   getKeywordInNews(newsContent)
 
             if len(keywords) !  0:
+                newsTitle   str(link.find("h2").contents[0]).replace("\n", "").replace("  ", "")
                 printResult(newsTitle, "（CTWANT）", newsLink, keywords)
     print("^^^^^^^^^  結束: CTWANT\n")
 
@@ -767,55 +757,43 @@ if SwitchEBC:
 
     counter   1
     for page in range(1, scrollPages+1):
-        url   "https://news.ebc.net.tw/realtime?page " + str(page)
-        soup   getSoupFromURL(url, 0, scrollDelay+2)
-        links   soup.find_all("div", class_ "news-list-box")
-        links   links[0].find_all("div", class_ "style1 white-box")
+        urlEBC   "https://news.ebc.net.tw/realtime?page " + str(page)
+        links   getLinksFromURL(urlEBC, "EBC")
 
         time.sleep(1)
-
         for link in links:
             time.sleep(0.2)
             if not isinstance(link, Tag):
                 continue
 
-            newsTitle   str(link.find("span", class_ "title").contents[0])
             newsLink   "https://news.ebc.net.tw" + str(link.find("a")["href"])
-            newsTag   link.find("div", class_ "news-category").contents[0]
-
             subResult   requests.get(newsLink, headers headers)
             subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
             newsInfo   str(subSoup.find("div", class_ "info"))
             newsTime   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsInfo)[0]
-
             if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
                 break
 
             print(str(counter) + " " + newsTime)
             counter +  1
 
+            newsTag   link.find("div", class_ "news-category").contents[0]
             if newsTag in deleteTagsEBC:
                 continue
 
             newsContent   str(subSoup.find("div", class_ "raw-style"))
 
-            pos   newsContent.find("更多鏡週刊報導")
-            if pos !  -1:
-                newsContent   newsContent[:pos]
-            pos   newsContent.find("往下看更多")
-            if pos !  -1:
-                newsContent   newsContent[:pos]
-            pos   newsContent.find("今日最熱門")
-            if pos !  -1:
-                newsContent   newsContent[:pos]
-            pos   newsContent.find("延伸閱讀")
-            if pos !  -1:
-                newsContent   newsContent[:pos]
+            stopWords   ["更多鏡週刊報導", "往下看更多", "今日最熱門", "延伸閱讀"]
+            for stopWord in stopWords:
+                pos   newsContent.find(stopWord)
+                if pos !  -1:
+                    newsContent   newsContent[:pos]
 
             keywords   getKeywordInNews(newsContent)
 
             if len(keywords) !  0:
+                newsTitle   str(link.find("span", class_ "title").contents[0])
                 printResult(newsTitle, "（東森）", newsLink, keywords)
     print("^^^^^^^^^  結束: 東森新聞\n")
 
@@ -841,7 +819,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
     while True:
         driver.get(tinyurl)
 
-        time.sleep(2)
+        time.sleep(1.5)
 
         if getNextNews:
             newsInfo   newsInfoQueue.get()
@@ -864,7 +842,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 找不到長網址input")
             getNextNews   False
             continue
-        time.sleep(2)
+        time.sleep(1.5)
 
         # generate short url
         try:
@@ -873,7 +851,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 找不到縮網址按鈕")
             getNextNews   False
             continue
-        time.sleep(2)
+        time.sleep(1.5)
 
         # copy short url
         try:
@@ -882,7 +860,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 找不到短網址內容")
             getNextNews   False
             continue 
-        time.sleep(2)
+        time.sleep(1.5)
 
         getNextNews   True
         print(". " + newsInfo[0])
