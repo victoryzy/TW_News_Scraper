@@ -1,12 +1,12 @@
 # 0   不爬文 ;  1   爬文
-SwitchLTN       1   # 自由時報 
-SwitchUDN       1   # 聯合新聞網
-SwitchET        1   # ETtoday
-SwitchApple     1   # 壹蘋新聞網
-SwitchSET       1   # 三立新聞網
-SwitchMIRROR    1   # 鏡週刊 
-SwitchTVBS      1   # TVBS
-SwitchNOWNEWS   1   # NOWNEWS
+SwitchLTN       0   # 自由時報 
+SwitchUDN       0   # 聯合新聞網
+SwitchET        0   # ETtoday
+SwitchApple     0   # 壹蘋新聞網
+SwitchSET       0   # 三立新聞網
+SwitchMIRROR    0   # 鏡週刊 
+SwitchTVBS      0   # TVBS
+SwitchNOWNEWS   0   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
 
@@ -22,7 +22,7 @@ scrollDelay   3.0   # 模擬滑鼠滾輪往下滾的間隔時間
 places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
            "義消", "義警消", "搜救人員", "救護技術員", "消促會", "工作權益促進會"]
-issues    ["災情", "救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒"]
+issues    ["救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒"]
 
 issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救"]
 issueGoods      ["AED", "住警器", "消防栓"]
@@ -33,7 +33,7 @@ issueFire       ["火災", "失火", "起火", "大火", "火光", "火燒車",
 issueAccident   ["車禍", "地震深度", "最大震度", "芮氏規模", "有感地震",
                  "墜橋", "輾斃", "墜樓", "山難", "瓦斯外洩", "土石流"]
 issueStatus     ["喪命", "喪生", "失蹤", "傷者", "遺體", "無生命跡象",
-                 "死者", "殉職", "失聯", "嗆暈", "意識模糊", "無意識",
+                 "殉職", "失聯", "嗆暈", "意識模糊", "無意識",
                  "命危", "OHCA", "不治", "昏迷", "受困", "罹難",
                  "無呼吸心跳"]
 
@@ -747,7 +747,11 @@ if SwitchCTWANT:
             for button in buttons:
                 button.extract()
 
-            keywords   getKeywordInNews(str(newsContent))
+            pos   str(newsContent).find("相關文章")
+            if pos !  -1:
+                newsContent   str(newsContent)[:pos]
+
+            keywords   getKeywordInNews(newsContent)
 
             if len(keywords) !  0:
                 printResult(newsTitle, "（CTWANT）", newsLink, keywords)
@@ -805,6 +809,9 @@ if SwitchEBC:
             pos   newsContent.find("今日最熱門")
             if pos !  -1:
                 newsContent   newsContent[:pos]
+            pos   newsContent.find("延伸閱讀")
+            if pos !  -1:
+                newsContent   newsContent[:pos]
 
             keywords   getKeywordInNews(newsContent)
 
@@ -834,7 +841,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
     while True:
         driver.get(tinyurl)
 
-        time.sleep(3)
+        time.sleep(2)
 
         if getNextNews:
             newsInfo   newsInfoQueue.get()
@@ -857,7 +864,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 找不到長網址input")
             getNextNews   False
             continue
-        time.sleep(3)
+        time.sleep(2)
 
         # generate short url
         try:
@@ -866,7 +873,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 找不到縮網址按鈕")
             getNextNews   False
             continue
-        time.sleep(3)
+        time.sleep(2)
 
         # copy short url
         try:
@@ -875,7 +882,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 找不到短網址內容")
             getNextNews   False
             continue 
-        time.sleep(3)
+        time.sleep(2)
 
         getNextNews   True
         print(". " + newsInfo[0])
