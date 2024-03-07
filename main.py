@@ -521,7 +521,11 @@ if SwitchSET:
         if newsContent is None or len(newsContent)    0:
             newsContent   subSoup.find_all("div", class_ "page-text")
 
-        keywords   getKeywordInNews(str(newsContent))
+        pos   str(newsContent).find("延伸閱讀")
+        if pos !  -1:
+            newsContent   str(newsContent)[:pos]
+
+        keywords   getKeywordInNews(newsContent)
 
         if len(keywords) !  0:
             newsTitle   str(linkAndTitle.contents[0])
