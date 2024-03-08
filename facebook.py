@@ -1,3 +1,13 @@
+"""
+姓名： 
+生日： 
+性別： 
+帳號： 
+密碼： 
+"""
+account   " "
+passwd   " "
+
 hoursBefore   2  # 限定整數。例如：2，代表要留下「2個小時內有發文的臉書」瀏覽器分頁
 
 urlAndName   []  # 這行不要動
@@ -64,13 +74,11 @@ from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
 
 scrollPages   1
-scrollDelay   2.5
+scrollDelay   1
 
 def getSoupFromURL(url, scrollPages, scrollDelay):
     driver.get(url)
     time.sleep(scrollDelay)
-    closeX   driver.find_element(By.XPATH, '//div[@aria-label "關閉"]')
-    closeX.click()
     for x in range(0, scrollPages):
         time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -97,15 +105,19 @@ opt.add_experimental_option('excludeSwitches', ['enable-logging'])
 
 service_   Service(executable_path driverPath)
 driver   webdriver.Chrome(service service_, options opt)
-
-driver.get("https://www.google.com")
-original_window   driver.current_window_handle
-driver.switch_to.new_window('tab')
-
 requests.packages.urllib3.disable_warnings(category InsecureRequestWarning)
 
-flagNewTab   True
+# login Facebook with fake account
+driver.get("https://www.facebook.com")
+time.sleep(1)
+driver.find_element(By.ID,"email").send_keys(account)
+driver.find_element(By.ID,"pass").send_keys(passwd)
+time.sleep(0.5)
+driver.find_element(By.XPATH, "//button[@data-testid 'royal_login_button']").click()
+time.sleep(1)
 
+
+flagNewTab   True
 for url, name in urlAndName:
     if flagNewTab:
         driver.switch_to.new_window('tab')
@@ -113,7 +125,16 @@ for url, name in urlAndName:
 
     time.sleep(scrollDelay)
 
-    As   soup.find_all("a")
+    firstPart   driver.find_element(By.XPATH, "/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div/div[4]/div[2]/div/div[2]/div[1]")
+    if "精選" in firstPart.text:
+        postList   driver.find_element(By.XPATH, "/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div/div[4]/div[2]/div/div[2]/div[3]")
+    else:
+        postList   driver.find_element(By.XPATH, "/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div/div[4]/div[2]/div/div[2]/div[2]")
+
+    postList   postList.get_attribute("outerHTML")
+    postSoup   BeautifulSoup(postList,'html.parser')
+    As   postSoup.find_all("a")
+
     flagFindTime   False
 
     for a in As:
@@ -138,9 +159,9 @@ for url, name in urlAndName:
 
                 if flagNewTab:
                     driver.execute_script("window.scrollTo(0, document.body.scrollTop);")
-                    print("已檢查 %s 的臉書，最新貼文時間：%s ，請查看： %s" %(name, labelContent, url))
+                    print("已檢查 %s ，最新貼文時間為 %s ，請查看 %s" %(name, labelContent, url.replace(" ", "")))
                 else:
-                    print("已檢查 %s 的臉書，最新貼文時間：%s " %(name, labelContent))
+                    print("已檢查 %s ，最新貼文時間為 %s " %(name, labelContent))
 
                 break
 
