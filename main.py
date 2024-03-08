@@ -651,11 +651,18 @@ if SwitchTVBS:
         if newsTag in deleteTagsTVBS:
             continue
 
-        for s in subSoup.select("script"):
-            s.extract()
-
         newsContents   subSoup.find_all("div", class_ "article_content", id "news_detail_div")
-        keywords   getKeywordInNews(str(newsContents))
+        newsContents   str(newsContents)
+        try:
+            moreNews   re.search("更多新聞.*<\/a>", newsContents)
+        except:
+            aaaaaa   1
+
+        if moreNews is not None:
+            toRemove   str(moreNews.group(0))
+            newsContents   newsContents.replace(toRemove, "")
+
+        keywords   getKeywordInNews(newsContents)
 
         if len(keywords) !  0:
             newsTitle   str(link.find("h2").contents[0])
