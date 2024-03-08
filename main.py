@@ -9,6 +9,7 @@ SwitchTVBS      1   # TVBS
 SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
+SwitchCTS       1   # 華視新聞
 
 SwitchCNA       0   # 中央社    # to debug
 
@@ -17,7 +18,7 @@ SwitchCNA       0   # 中央社    # to debug
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   1   
 timeSlot      1.0   # 收集幾個小時內的新聞
-scrollDelay   2.5   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
@@ -33,9 +34,8 @@ issueFire       ["火災", "失火", "起火", "大火", "火光", "火燒車",
 issueAccident   ["車禍", "地震深度", "最大震度", "芮氏規模", "有感地震",
                  "墜橋", "輾斃", "墜樓", "山難", "瓦斯外洩", "土石流"]
 issueStatus     ["喪命", "喪生", "失蹤", "傷者", "遺體", "無生命跡象",
-                 "殉職", "失聯", "嗆暈", "意識模糊", "無意識",
-                 "命危", "OHCA", "不治", "昏迷", "受困", "罹難",
-                 "無呼吸心跳"]
+                 "殉職", "失聯", "嗆暈", "意識模糊", "無意識", "罹難",
+                 "命危", "OHCA", "不治", "昏迷", "受困", "無呼吸心跳"]
 
 deleteTagsLTN       {"ent":"娛樂", "istyle":"時尚", "sports":"體育", "ec":"財經", 
                      "def":"軍武", "3c":"3C", "art.ltn":"藝文", "playing":"玩咖",
@@ -49,6 +49,7 @@ deleteTagsMIRROR    {"fin":"財經", "ind":"財經", "bus":"財經", "money":"�
 deleteTagsTVBS      ["娛樂", "食尚", "體育"]
 deleteTagsCTWANT    ["娛樂", "財經", "漂亮"]
 deleteTagsEBC       ["娛樂", "健康", "體育", "財經"]
+deleteTagsCTS       ["財經", "氣象", "娛樂", "運動", "藝文"]
 #############################################################
 #   以下內容不要修改
 #############################################################
@@ -87,7 +88,6 @@ issues   issues + issueFire + issueAccident + issueBehavior + issueGoods + issue
 
 driverPath   ""
 userAgent   ""
-
 if sys.platform    "darwin":
     # macos
     userAgent   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
@@ -204,18 +204,33 @@ def getLinksFromURL(url, pressName):
     if pressName    "EBC":
         links   soup.find_all("div", class_ "news-list-box")
         return links[0].find_all("div", class_ "style1 white-box")
+    if pressName    "CTS":
+        links   soup.find_all("div", class_ "newslist-container flexbox one_row_style")
+        return links[0].find_all("a")
 
 def getSubsoupFromURL(newsLink):
     subResult   requests.get(newsLink)
+    subResult.encoding 'utf-8'              # For CTS zh
     subSoup   BeautifulSoup(subResult.text, features "html.parser")
 
     for s in subSoup.select("script"):
         s.extract()
     for s in subSoup.select("style"):
         s.extract()
-
     return subSoup
 
+def getCTSNewsTagFromLink(link):
+    if "money" in link:
+        return "財經"
+    if "weather" in link:
+        return "氣象"
+    if "entertain" in link:
+        return "娛樂"
+    if "sports" in link:
+        return "運動" 
+    if "arts" in link:
+        return "藝文"
+    return None
 #################################################################################
 
 # 自由時報 即時新聞總覽
@@ -800,6 +815,46 @@ if SwitchEBC:
                 newsTitle   str(link.find("span", class_ "title").contents[0])
                 printResult(newsTitle, "（東森）", newsLink, keywords)
     print("^^^^^^^^^  結束: 東森新聞\n")
+
+#################################################################################
+
+# 華視新聞 即時新聞列表
+if SwitchCTS:
+    print("vvvvvvvvv  開始: 華視新聞")
+    earlier   datetime.now() - timedelta(hours timeSlot)
+    links   getLinksFromURL("https://news.cts.com.tw/real/index.html", "CTS")
+
+    counter   1
+    for link in links:
+        time.sleep(0.2)
+
+        newsTime   str(link.find("div", class_ "newstime").contents[0])
+        if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            break
+
+        print(str(counter) + "  " + newsTime)
+        counter +  1
+
+        newsTagLink   link.find("div", class_ "tag").find("img")["src"]
+        newsTag   getCTSNewsTagFromLink(newsTagLink)
+
+        if newsTag in deleteTagsCTS:
+            continue
+
+        newsLink   link["href"]
+        subSoup   getSubsoupFromURL(newsLink)
+        for div in subSoup.find_all("div", class_ "flexbox cts-tbfs"): 
+            div.extract()
+        for div in subSoup.find_all("div", class_ "yt_container_placeholder"): 
+            div.extract()
+
+        newsContent   subSoup.find_all("div", class_ "artical-content")
+        keywords   getKeywordInNews(str(newsContent))
+
+        if len(keywords) !  0:
+            newsTitle   link["title"]
+            printResult(newsTitle, "（華視）", newsLink, keywords)
+    print("^^^^^^^^^  結束: 華視新聞\n")
 
 #################################################################################
 
