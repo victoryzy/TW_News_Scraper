@@ -16,8 +16,8 @@ SwitchCNA       0   # 中央社    # to debug
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   1   
-timeSlot      1.0   # 收集幾個小時內的新聞
+scrollPages   6     # >  4 ，自由和聯合新聞數量較多   
+timeSlot      1.1   # 收集幾個小時內的新聞
 scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places    ["竹市", "消防局", "消防署", "竹塹"]
@@ -35,7 +35,7 @@ issueAccident   ["車禍", "地震深度", "最大震度", "芮氏規模", "有�
                  "墜橋", "輾斃", "墜樓", "山難", "瓦斯外洩", "土石流"]
 issueStatus     ["喪命", "喪生", "失蹤", "傷者", "遺體", "無生命跡象",
                  "殉職", "失聯", "嗆暈", "意識模糊", "無意識", "罹難",
-                 "命危", "OHCA", "不治", "昏迷", "受困", "無呼吸心跳"]
+                 "命危", "OHCA", "不治", "昏迷", "受困", "無呼吸心跳", "亡"]
 
 deleteTagsLTN       {"ent":"娛樂", "istyle":"時尚", "sports":"體育", "ec":"財經", 
                      "def":"軍武", "3c":"3C", "art.ltn":"藝文", "playing":"玩咖",
@@ -679,7 +679,7 @@ if SwitchNOWNEWS:
     url   "https://nownews.com/cat/breaking"
     driver.get(url)
     nextPageButton   driver.find_element(By.ID, "moreNews")
-    for x in range(0, scrollPages+1):
+    for x in range(0, scrollPages-3):
         time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(scrollDelay)
@@ -734,7 +734,7 @@ if SwitchCTWANT:
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     counter   1
-    for page in range(1, scrollPages+1):
+    for page in range(1, scrollPages-2):
         url   "https://ctwant.com/category/最新?page " + str(page)
         soup   getSoupFromURL(url, 0, scrollDelay)
         links   soup.find_all("div", class_ "p-realtime__item")
@@ -782,7 +782,7 @@ if SwitchEBC:
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     counter   1
-    for page in range(1, scrollPages+1):
+    for page in range(1, scrollPages-2):
         urlEBC   "https://news.ebc.net.tw/realtime?page " + str(page)
         links   getLinksFromURL(urlEBC, "EBC")
 
