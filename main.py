@@ -1,6 +1,7 @@
 # 0   不爬文 ;  1   爬文
 SwitchLTN       1   # 自由時報 
 SwitchUDN       1   # 聯合新聞網
+SwitchCNA       1   # 中央社
 SwitchET        1   # ETtoday
 SwitchApple     1   # 壹蘋新聞網
 SwitchSET       1   # 三立新聞網
@@ -10,8 +11,6 @@ SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
 SwitchCTS       1   # 華視新聞
-
-SwitchCNA       0   # 中央社    # to debug
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
@@ -189,8 +188,6 @@ def getLinksFromURL(url, pressName):
         return soup.find_all("a", class_ "tit")
     if pressName    "UDN":
         return soup.find_all('div', class_ "story-list__text")
-    if pressName    "CNA":
-        return soup.find_all('ul', class_ "mainList imgModule")
     if pressName    "ETtoday":
         return soup.find_all('div', class_ "part_list_2")[0].findAll("h3")
     if pressName    "Apple":
@@ -359,37 +356,71 @@ if SwitchUDN:
 # 中央社 即時新聞列表
 if SwitchCNA:
     print("vvvvvvvvv  開始: 中央社")
-    earlier   datetime.now() - timedelta(hours timeSlot)
-    links   getLinksFromURL("https://cna.com.tw/list/aall.aspx", "CNA")
+    enterCNARealtimeNews   False
+    while not enterCNARealtimeNews:
+        enterCNA   False
+        while not enterCNA:
+            driver.get("https://www.google.com/search?q %E4%B8%AD%E5%A4%AE%E7%A4%BE")
 
+            time.sleep(1)
+            try:
+                driver.find_element(By.XPATH, "/html/body/div[4]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
+                enterCNA   True
+            except NoSuchElementException:
+                time.sleep(0.5)
+                try:
+                    driver.find_element(By.XPATH, "/html/body/div[5]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
+                    enterCNA   True
+                except NoSuchElementException:
+                    time.sleep(0.5)
+                    try:
+                        driver.find_element(By.XPATH, "/html/body/div[6]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
+                        enterCNA   True
+                    except NoSuchElementException:
+                        print("無法進入中央社即時新聞列表，若失敗太多次，請重新執行。")
+                        time.sleep(0.5)
+        try:
+            driver.find_element(By.XPATH, "/html/body/div/header/div/div[2]/div/div/ul/li[1]/a").click()
+            enterCNARealtimeNews   True
+        except NoSuchElementException:
+            print("無法進入中央社即時新聞列表，若失敗太多次，請重新執行。")
+
+    earlier   datetime.now() - timedelta(hours timeSlot)
+    soup   BeautifulSoup(driver.page_source,"html.parser")
+    links   soup.find_all('ul', class_ "mainList imgModule")
+
+    xpathCounter   1
     counter   1
     for link in links[0]:
-        time.sleep(0.2)
+        time.sleep(0.5)
         if link.has_attr("style"):
             continue
 
+        newsTitle   str(link.find("span").contents[0])
         newsTime   link.find("div", class_ "date").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             break
-
         print(str(counter) + " " + newsTime)
         counter +  1
 
-        time.sleep(3)
+        xpath   "/html/body/div/div[6]/div[1]/div[1]/div/div[3]/div[1]/ul/li[" + str(xpathCounter) + "]/a"
+        button   driver.find_element(By.XPATH, xpath)
+        xpathCounter +  1
+        driver.execute_script("arguments[0].click();", button)
+        time.sleep(0.5)
+
         newsLink   "https://cna.com.tw" + link.find("a")["href"]
-        subResult   requests.get(newsLink, headers headers)
-        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        subSoup   BeautifulSoup(driver.page_source,"html.parser")
 
         newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
         if newsTag in deleteTagsCNA:
+            driver.execute_script("window.history.go(-1)")
             continue
 
         for s in subSoup.select("script"):
             s.extract()
 
-        newsContent   subSoup.find_all('p')
-        newsContent   str(newsContent)
-
+        newsContent   str(subSoup.find_all('p'))
         toRemove   re.search(r"\d{7}.*<\/p>, <p>本網站之文字、圖片及影音，非經授權，不得轉載、公開播送或公開傳輸及利用。<\/p>", newsContent).group(0)
         newsContent   newsContent.replace(toRemove, "")
 
@@ -399,8 +430,10 @@ if SwitchCNA:
         keywords   getKeywordInNews(str(newsContent))
 
         if len(keywords) !  0:
-            newsTitle   str(link.find("span").contents[0])
             printResult(newsTitle, "（中央社）", newsLink, keywords)
+        
+        time.sleep(0.5)
+        driver.execute_script("window.history.go(-1)")
     print("^^^^^^^^^  結束: 中央社\n")
 
 #################################################################################
