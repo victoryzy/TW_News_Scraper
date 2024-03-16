@@ -356,15 +356,18 @@ if SwitchUDN:
 # 中央社 即時新聞列表
 if SwitchCNA:
     print("vvvvvvvvv  開始: 中央社")
+
+    """
     enterCNARealtimeNews   False
     while not enterCNARealtimeNews:
         enterCNA   False
-        while not enterCNA:
+        while not enterCNA or "cna.com.tw" not in driver.current_url:
             driver.get("https://www.google.com/search?q %E4%B8%AD%E5%A4%AE%E7%A4%BE")
 
             time.sleep(1)
             try:
-                driver.find_element(By.XPATH, "/html/body/div[4]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
+                # driver.find_element(By.XPATH, "/html/body/div[4]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
+                driver.find_element(By.XPATH, "//*[contains(text(), '中央社CNA')]").click()
                 enterCNA   True
             except NoSuchElementException:
                 time.sleep(0.5)
@@ -379,12 +382,20 @@ if SwitchCNA:
                     except NoSuchElementException:
                         print("無法進入中央社即時新聞列表，若失敗太多次，請重新執行。")
                         time.sleep(0.5)
+        time.sleep(0.5)
         try:
-            driver.find_element(By.XPATH, "/html/body/div/header/div/div[2]/div/div/ul/li[1]/a").click()
+            driver.find_element(By.XPATH, '//*[@id "pnProductNavContents"]/ul/li[1]/a').click()
             enterCNARealtimeNews   True
         except NoSuchElementException:
             print("無法進入中央社即時新聞列表，若失敗太多次，請重新執行。")
+    """
 
+    driver.get("https://www.google.com/search?q %E4%B8%AD%E5%A4%AE%E7%A4%BE")
+    time.sleep(0.5)
+    driver.find_element(By.XPATH, "//*[contains(text(), '中央社CNA')]").click()
+    time.sleep(0.5)
+    driver.find_element(By.XPATH, '//*[@id "pnProductNavContents"]/ul/li[1]/a').click()
+    time.sleep(0.5)
     earlier   datetime.now() - timedelta(hours timeSlot)
     soup   BeautifulSoup(driver.page_source,"html.parser")
     links   soup.find_all('ul', class_ "mainList imgModule")
@@ -403,7 +414,7 @@ if SwitchCNA:
         print(str(counter) + " " + newsTime)
         counter +  1
 
-        xpath   "/html/body/div/div[6]/div[1]/div[1]/div/div[3]/div[1]/ul/li[" + str(xpathCounter) + "]/a"
+        xpath   '//*[@id "jsMainList"]/li[' + str(xpathCounter) + ']/a'
         button   driver.find_element(By.XPATH, xpath)
         xpathCounter +  1
         driver.execute_script("arguments[0].click();", button)
@@ -428,7 +439,6 @@ if SwitchCNA:
             print("[ERROR] 中央社 新聞內文沒有抓到")
 
         keywords   getKeywordInNews(str(newsContent))
-
         if len(keywords) !  0:
             printResult(newsTitle, "（中央社）", newsLink, keywords)
         
