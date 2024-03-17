@@ -423,7 +423,7 @@ if SwitchCNA:
         driver.execute_script("arguments[0].click();", button)
         time.sleep(0.5)
 
-        newsLink   "https://cna.com.tw" + link.find("a")["href"]
+        newsLink   "https://www.cna.com.tw" + link.find("a")["href"]
         subSoup   BeautifulSoup(driver.page_source,"html.parser")
 
         newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
