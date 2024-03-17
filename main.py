@@ -1,21 +1,21 @@
 # 0   不爬文 ;  1   爬文
-SwitchLTN       0   # 自由時報 
+SwitchLTN       1   # 自由時報 
 SwitchUDN       1   # 聯合新聞網
-SwitchCNA       0   # 中央社
-SwitchET        0   # ETtoday
-SwitchApple     0   # 壹蘋新聞網
-SwitchSET       0   # 三立新聞網
-SwitchMIRROR    0   # 鏡週刊 
-SwitchTVBS      0   # TVBS
-SwitchNOWNEWS   0   # NOWNEWS
-SwitchCTWANT    0   # CTWANT
-SwitchEBC       0   # 東森新聞
-SwitchCTS       0   # 華視新聞
+SwitchCNA       1   # 中央社
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
+SwitchSET       1   # 三立新聞網
+SwitchMIRROR    1   # 鏡週刊 
+SwitchTVBS      1   # TVBS
+SwitchNOWNEWS   1   # NOWNEWS
+SwitchCTWANT    1   # CTWANT
+SwitchEBC       1   # 東森新聞
+SwitchCTS       1   # 華視新聞
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   2     # >  4 ，自由和聯合新聞數量較多   
+scrollPages   6     # >  4 ，自由和聯合新聞數量較多   
 timeSlot      1.1   # 收集幾個小時內的新聞
 scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -514,6 +514,9 @@ if SwitchApple:
 
         newsLink    link.find("h3").contents[1]["href"]
         subSoup   getSubsoupFromURL(newsLink)
+
+        for s in subSoup.select("a"):
+            s.extract()
 
         newsContents   subSoup.find_all("div", class_ "post-content")
         newsContent   subSoup.find_all("blockquote")
