@@ -214,6 +214,10 @@ def getSubsoupFromURL(newsLink):
         s.extract()
     for s in subSoup.select("style"):
         s.extract()
+    
+    # 超連結很高機率是前往其他新聞，可能會有不預期的關鍵字被抓到
+    for s in subSoup.select("a"):
+        s.extract()
     return subSoup
 
 def getCTSNewsTagFromLink(link):
