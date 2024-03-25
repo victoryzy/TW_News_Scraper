@@ -15,7 +15,7 @@ SwitchCTS       1   # 華視新聞
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   6     # >  4 ，自由和聯合新聞數量較多   
+scrollPages   5     # >  4 ，自由和聯合新聞數量較多   
 timeSlot      1.1   # 收集幾個小時內的新聞
 scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
@@ -67,6 +67,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import ElementNotInteractableException
 #############################################################
 """
 1. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
@@ -96,7 +97,7 @@ if sys.platform    "darwin":
 if sys.platform    "win32":
     # windows
     userAgent   "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-    driverPath   r"C:\\Users\\Administrator\\Desktop\\news\\chromedriver.exe"
+    driverPath   r"C:\\Users\\owner\\Desktop\\news\\chromedriver.exe"
 
 headers   {'User-Agent' : userAgent}
 opt   webdriver.ChromeOptions()
@@ -926,6 +927,14 @@ newsInfoQueue.put(None) # To indicate termination
 
 tinyurl   "https://tinyurl.com/app"
 driver.get(tinyurl)
+# Close pop-up sign-in ad
+try:
+    driver.find_element(By.XPATH, "//button[@aria-label 'Close dialog']").click()
+except NoSuchElementException:
+    doNothing   True
+except ElementNotInteractableException:
+    doNothing   True
+
 soup   BeautifulSoup(driver.page_source,"html.parser")
 
 counter   0
@@ -933,6 +942,14 @@ getNextNews   True
 with open(resultFilename, 'w', encoding 'UTF-8') as f:
     while True:
         driver.get(tinyurl)
+
+        # Close pop-up sign-in ad
+        try:
+            driver.find_element(By.XPATH, "//button[@aria-label 'Close dialog']").click()
+        except NoSuchElementException:
+            doNothing   True
+        except ElementNotInteractableException:
+            doNothing   True
 
         time.sleep(1.5)
 
@@ -970,7 +987,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
 
         # copy short url
         try:
-            shortURL   driver.find_element(By.ID,"homepage_create_tinyurl_form_created_input").get_attribute("value")
+            shortURL   driver.find_element(By.XPATH,"//input[@data-test-id 'homepage_create_tinyurl_form_created_input']").get_attribute("value")
         except NoSuchElementException:
             print("[ERROR] 找不到短網址內容")
             getNextNews   False
