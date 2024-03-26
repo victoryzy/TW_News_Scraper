@@ -68,6 +68,7 @@ from selenium.webdriver.chrome.service import Service
 from urllib3.exceptions import InsecureRequestWarning
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import ElementClickInterceptedException
 #############################################################
 """
 1. 在1/19或11/9可能會發生內文有加上時間標記，因此每篇新聞都會被抓出來，需要人工review
@@ -946,9 +947,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         # Close pop-up sign-in ad
         try:
             driver.find_element(By.XPATH, "//button[@aria-label 'Close dialog']").click()
-        except NoSuchElementException:
-            doNothing   True
-        except ElementNotInteractableException:
+        except (NoSuchElementException, ElementNotInteractableException):
             doNothing   True
 
         time.sleep(1.5)
@@ -970,8 +969,8 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         # paste long url
         try:
             driver.find_element(By.ID,'long-url').send_keys(longUrl)
-        except NoSuchElementException:
-            print("[ERROR] 找不到長網址input")
+        except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException) as err:
+            print("[ERROR] 長網址輸入區 " + str(type(err)))
             getNextNews   False
             continue
         time.sleep(1.5)
@@ -979,8 +978,8 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         # generate short url
         try:
             driver.find_element(By.XPATH, "//button[@data-test-id 'home_shortener_btn_create']").click()
-        except NoSuchElementException:
-            print("[ERROR] 找不到縮網址按鈕")
+        except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException) as err:
+            print("[ERROR] 縮網址按鈕 " + str(type(err)))
             getNextNews   False
             continue
         time.sleep(1.5)
@@ -988,10 +987,10 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         # copy short url
         try:
             shortURL   driver.find_element(By.XPATH,"//input[@data-test-id 'homepage_create_tinyurl_form_created_input']").get_attribute("value")
-        except NoSuchElementException:
-            print("[ERROR] 找不到短網址內容")
+        except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException) as err:
+            print("[ERROR] 短網址內容 " + str(type(err)))
             getNextNews   False
-            continue 
+            continue    
         time.sleep(1.5)
 
         getNextNews   True
