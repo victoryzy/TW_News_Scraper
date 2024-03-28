@@ -95,7 +95,7 @@ if sys.platform    "darwin":
 if sys.platform    "win32":
     # windows
     userAgent   "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-    driverPath   r"C:\\Users\\Administrator\\Desktop\\news\\chromedriver.exe"
+    driverPath   r"C:\\Users\\owner\\Desktop\\news\\chromedriver.exe"
 
 headers   {'User-Agent' : userAgent}
 opt   webdriver.ChromeOptions()
