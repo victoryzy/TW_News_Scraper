@@ -22,7 +22,7 @@ scrollDelay   2.0   # 模擬滑鼠滾輪往下滾的間隔時間
 places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "消防替代役", "消防役", "EMT",
            "義消", "義警消", "搜救人員", "救護技術員", "消促會", "工作權益促進會"]
-issues    ["救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒", "天坑"]
+issues    ["救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒", "天坑", "電線桿倒塌", "路樹倒塌"]
 
 issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救"]
 issueGoods      ["AED", "住警器", "消防栓"]
@@ -34,7 +34,7 @@ issueAccident   ["車禍", "地震深度", "最大震度", "芮氏規模", "有�
                  "墜橋", "輾斃", "墜樓", "山難", "瓦斯外洩", "土石流"]
 issueStatus     ["喪命", "喪生", "失蹤", "傷者", "遺體", "無生命跡象",
                  "殉職", "失聯", "嗆暈", "意識模糊", "無意識", "罹難",
-                 "命危", "OHCA", "不治", "昏迷", "受困", "無呼吸心跳", "亡"]
+                 "命危", "OHCA", "不治", "昏迷", "受困", "無呼吸心跳"]
 
 deleteTagsLTN       {"ent":"娛樂", "istyle":"時尚", "sports":"體育", "ec":"財經", 
                      "def":"軍武", "3c":"3C", "art.ltn":"藝文", "playing":"玩咖",
@@ -243,7 +243,7 @@ if SwitchLTN:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
         newsLink   str(link['href'])
         subSoup   getSubsoupFromURL(newsLink)
 
@@ -296,7 +296,7 @@ if SwitchUDN:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
         newsTitle   None
         newsTime   None
         newsLink   None
@@ -316,6 +316,7 @@ if SwitchUDN:
 
         newsTime   link.find("div", class_ "story-list__info")
         if (newsTime is None) or (newsTitle is None) or (newsLink is None):
+            # 這部分為機率性出現，相同的新聞連結可能不會每次都會因此被跳過
             print("continue")
             continue
         newsTime   newsTime.find("time", class_ "story-list__time").contents
@@ -361,40 +362,8 @@ if SwitchUDN:
 # 中央社 即時新聞列表
 if SwitchCNA:
     print("vvvvvvvvv  開始: 中央社")
-
-    """
-    enterCNARealtimeNews   False
-    while not enterCNARealtimeNews:
-        enterCNA   False
-        while not enterCNA or "cna.com.tw" not in driver.current_url:
-            driver.get("https://www.google.com/search?q %E4%B8%AD%E5%A4%AE%E7%A4%BE")
-
-            time.sleep(1)
-            try:
-                # driver.find_element(By.XPATH, "/html/body/div[4]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
-                driver.find_element(By.XPATH, "//*[contains(text(), '中央社CNA')]").click()
-                enterCNA   True
-            except NoSuchElementException:
-                time.sleep(0.5)
-                try:
-                    driver.find_element(By.XPATH, "/html/body/div[5]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
-                    enterCNA   True
-                except NoSuchElementException:
-                    time.sleep(0.5)
-                    try:
-                        driver.find_element(By.XPATH, "/html/body/div[6]/div/div[11]/div[1]/div[2]/div[2]/div/div/div[1]/div/div/div/div/div/div/div/div[1]/div/span/a").click()
-                        enterCNA   True
-                    except NoSuchElementException:
-                        print("無法進入中央社即時新聞列表，若失敗太多次，請重新執行。")
-                        time.sleep(0.5)
-        time.sleep(0.5)
-        try:
-            driver.find_element(By.XPATH, '//*[@id "pnProductNavContents"]/ul/li[1]/a').click()
-            enterCNARealtimeNews   True
-        except NoSuchElementException:
-            print("無法進入中央社即時新聞列表，若失敗太多次，請重新執行。")
-    """
-
+    
+    # 中央社需要先由google搜尋的結果點進去，直接get中央社網站會被偵測到
     driver.get("https://www.google.com/search?q %E4%B8%AD%E5%A4%AE%E7%A4%BE")
     time.sleep(0.5)
     driver.find_element(By.XPATH, "//*[contains(text(), '中央社CNA')]").click()
@@ -408,7 +377,7 @@ if SwitchCNA:
     xpathCounter   1
     counter   1
     for link in links[0]:
-        time.sleep(0.5)
+        time.sleep(0.3)
         if link.has_attr("style"):
             continue
 
@@ -428,7 +397,12 @@ if SwitchCNA:
         newsLink   "https://www.cna.com.tw" + link.find("a")["href"]
         subSoup   BeautifulSoup(driver.page_source,"html.parser")
 
-        newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
+        try:
+            newsTag   subSoup.find("div", class_ "breadcrumb").findAll("a")[1].contents[0]
+        except AttributeError:
+            # 中央社會有新聞點進去內容不是一般的新聞，而是集結多個有關於ＯＯＯ的資訊，因此沒有新聞標題和類別
+            continue
+
         if newsTag in deleteTagsCNA:
             driver.execute_script("window.history.go(-1)")
             continue
@@ -461,7 +435,7 @@ if SwitchET:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         newsTime   str(link.find("span", class_ "date").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
@@ -501,7 +475,7 @@ if SwitchApple:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         newsTime    link.find("time").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
@@ -542,7 +516,7 @@ if SwitchSET:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
         linkAndTitle   link.find("a", class_ "gt")
         newsLink   str(linkAndTitle["href"])
         if "https" not in str(linkAndTitle["href"]):
@@ -608,7 +582,7 @@ if SwitchMIRROR:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
         newsLink   None
         newsTitle   None
         newsTime   None
@@ -681,7 +655,7 @@ if SwitchTVBS:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
         if link.find("a") is None or link.find("div", class_ "time") is None:
             continue
 
@@ -741,7 +715,7 @@ if SwitchNOWNEWS:
 
     counter   1
     for link in links[0]:
-        time.sleep(0.2)
+        time.sleep(0.1)
         if not isinstance(link, Tag):
             continue
         
@@ -791,7 +765,7 @@ if SwitchCTWANT:
         links   soup.find_all("div", class_ "p-realtime__item")
 
         for link in links:
-            time.sleep(0.2)
+            time.sleep(0.1)
 
             newsTime   str(link.find("time")["datetime"])
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
@@ -839,7 +813,7 @@ if SwitchEBC:
 
         time.sleep(1)
         for link in links:
-            time.sleep(0.2)
+            time.sleep(0.1)
             if not isinstance(link, Tag):
                 continue
 
@@ -884,7 +858,7 @@ if SwitchCTS:
 
     counter   1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         newsTime   str(link.find("div", class_ "newstime").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
