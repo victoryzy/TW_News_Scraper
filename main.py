@@ -15,9 +15,9 @@ SwitchCTS       1   # 華視新聞
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   7    # >  4 ，自由和聯合新聞數量較多   
-timeSlot      1.5   # 收集幾個小時內的新聞
-scrollDelay   6.0   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollPages   4    # >  4 ，自由和聯合新聞數量較多   
+timeSlot      1.1   # 收集幾個小時內的新聞
+scrollDelay   4.5   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "消防員", "消防人員", "特搜", "消防替代役", "消防役", "EMT",
@@ -268,6 +268,10 @@ if SwitchLTN:
             if tags in newsLink:
                 flagIgnore   True
                 break
+        
+        newsTitle   str(link.find("h3", class_ "title").contents[0])
+        if "健康網" in newsTitle:
+            flagIgnore   True
 
         if flagIgnore:
             continue
@@ -283,7 +287,6 @@ if SwitchLTN:
         keywords   getKeywordInNews(str(newsContent2))
 
         if len(keywords) !  0:
-            newsTitle   str(link.find("h3", class_ "title").contents[0])
             printResult(newsTitle, "（自由）", newsLink, keywords)
     print("^^^^^^^^^  結束: 自由時報\n")
 
@@ -367,9 +370,10 @@ if SwitchCNA:
     # 中央社需要先由google搜尋的結果點進去，直接get中央社網站會被偵測到
     driver.get("https://www.google.com/search?q %E4%B8%AD%E5%A4%AE%E7%A4%BE")
     time.sleep(0.5)
-    driver.find_element(By.XPATH, "//*[contains(text(), '中央社CNA')]").click()
-    time.sleep(0.5)
-    driver.find_element(By.XPATH, '//*[@id "pnProductNavContents"]/ul/li[1]/a').click()
+    # driver.find_element(By.XPATH, "//*[contains(text(), '中央社CNA')]").click() # 找中央社CNA的字串進入新聞網站
+    # driver.find_element(By.XPATH, '//*[@id "pnProductNavContents"]/ul/li[1]/a').click() # 點擊「即時」
+    driver.find_element(By.LINK_TEXT, "即時").click() # 直接從搜尋結果點擊「即時」，進到中央社的即時新聞列表
+
     time.sleep(0.5)
     earlier   datetime.now() - timedelta(hours timeSlot)
     soup   BeautifulSoup(driver.page_source,"html.parser")
