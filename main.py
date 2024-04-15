@@ -1,16 +1,16 @@
 # 0   不爬文 ;  1   爬文
 SwitchLTN       1   # 自由時報 
-SwitchUDN       1   # 聯合新聞網
-SwitchCNA       1   # 中央社
-SwitchET        1   # ETtoday
-SwitchApple     1   # 壹蘋新聞網
-SwitchSET       1   # 三立新聞網
-SwitchMIRROR    1   # 鏡週刊 
-SwitchTVBS      1   # TVBS
-SwitchNOWNEWS   1   # NOWNEWS
-SwitchCTWANT    1   # CTWANT
-SwitchEBC       1   # 東森新聞
-SwitchCTS       1   # 華視新聞
+SwitchUDN       0   # 聯合新聞網
+SwitchCNA       0   # 中央社
+SwitchET        0   # ETtoday
+SwitchApple     0   # 壹蘋新聞網
+SwitchSET       0   # 三立新聞網
+SwitchMIRROR    0   # 鏡週刊 
+SwitchTVBS      0   # TVBS
+SwitchNOWNEWS   0   # NOWNEWS
+SwitchCTWANT    0   # CTWANT
+SwitchEBC       0   # 東森新聞
+SwitchCTS       0   # 華視新聞
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
@@ -929,7 +929,13 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         except (NoSuchElementException, ElementNotInteractableException):
             doNothing   True
 
-        time.sleep(1.5)
+        time.sleep(0.5)
+
+        # Accept Cookie
+        try:
+            driver.find_element(By.XPATH, "//button[@data-test-id 'cookies_section_got_it_btn']").click()
+        except (NoSuchElementException, ElementNotInteractableException):
+            doNothing   True
 
         if getNextNews:
             newsInfo   newsInfoQueue.get()
