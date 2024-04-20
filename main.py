@@ -1,36 +1,35 @@
 # 0   不爬文 ;  1   爬文
 SwitchLTN       1   # 自由時報 
-SwitchUDN       0   # 聯合新聞網
-SwitchCNA       0   # 中央社
-SwitchET        0   # ETtoday
-SwitchApple     0   # 壹蘋新聞網
-SwitchSET       0   # 三立新聞網
-SwitchMIRROR    0   # 鏡週刊 
-SwitchTVBS      0   # TVBS
-SwitchNOWNEWS   0   # NOWNEWS
-SwitchCTWANT    0   # CTWANT
-SwitchEBC       0   # 東森新聞
-SwitchCTS       0   # 華視新聞
+SwitchUDN       1   # 聯合新聞網
+SwitchCNA       1   # 中央社
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
+SwitchSET       1   # 三立新聞網
+SwitchMIRROR    1   # 鏡週刊 
+SwitchTVBS      1   # TVBS
+SwitchNOWNEWS   1   # NOWNEWS
+SwitchCTWANT    1   # CTWANT
+SwitchEBC       1   # 東森新聞
+SwitchCTS       1   # 華視新聞
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
 scrollPages   4    # >  4 ，自由和聯合新聞數量較多   
 timeSlot      1.1   # 收集幾個小時內的新聞
-scrollDelay   4.5   # 模擬滑鼠滾輪往下滾的間隔時間
+scrollDelay   4.0   # 模擬滑鼠滾輪往下滾的間隔時間
 
 places    ["竹市", "消防局", "消防署", "竹塹"]
-persons   ["高虹安", "高市長", "消防員", "消防人員", "特搜", "消防替代役", "消防役", "EMT",
-           "義消", "義警消", "搜救人員", "救護技術員", "消促會", "工作權益促進會"]
-issues    ["救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒", "天坑", "電線桿倒塌", "路樹倒塌",
-           "位移", "坍方", "斷裂", "崩塌", "變形", "走山"]
+persons   ["高虹安", "高市長", "特搜", "搜救人員", "消防役", "EMT",
+           "義消", "義警消", "救護技術員", "消促會", "工作權益促進會"]
+issues    ["救災", "倒塌", "消防", "到院前", "防災", "一氧化碳中毒", "天坑", 
+           "電線桿倒塌", "路樹倒塌", "位移", "坍方", "崩塌", "走山"]
 
 issueBehavior   ["急救", "心肺復甦術", "CPR", "電擊", "灌救"]
 issueGoods      ["AED", "住警器", "消防栓"]
 issueSuicide    ["燒炭", "上吊", "割腕", "割喉", "自戕", "跳樓", "自殺"]
-issueFire       ["火災", "失火", "起火", "大火", "火光", "火燒車",
-                 "水線", "滅火器", "火海", "打火", "灌救",
-                 "火調", "燒毀", "火警", "燒起來", "雲梯車"]
+issueFire       ["火災", "失火", "起火", "大火", "火光", "火燒車", "灌救",
+                 "水線", "火海", "打火", "火調", "燒毀", "火警", "雲梯車"]
 issueAccident   ["車禍", "地震深度", "最大震度", "芮氏規模", "有感地震",
                  "墜橋", "輾斃", "墜樓", "山難", "瓦斯外洩", "土石流"]
 issueStatus     ["喪命", "喪生", "失蹤", "傷者", "遺體", "無生命跡象",
@@ -59,7 +58,6 @@ import re
 import sys
 import time
 import requests
-from lxml import etree
 from queue import Queue
 from selenium import webdriver
 from bs4 import BeautifulSoup, Tag
@@ -436,11 +434,14 @@ if SwitchCNA:
 if SwitchET:
     print("vvvvvvvvv  開始: ETtoday")
     earlier   datetime.now() - timedelta(hours timeSlot)
-    links   getLinksFromURL("https://ettoday.net/news/news-list.htm", "ETtoday")
+    # links   getLinksFromURL("https://ettoday.net/news/news-list.htm", "ETtoday")
+
+    result   requests.get("https://ettoday.net/news/news-list.htm")
+    links   BeautifulSoup(result.text, features "html.parser").find_all('div', class_ "part_list_2")[0].findAll("h3")
 
     counter   1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.2)
 
         newsTime   str(link.find("span", class_ "date").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
@@ -477,6 +478,10 @@ if SwitchApple:
     print("vvvvvvvvv  開始: 壹蘋新聞網")
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://tw.nextapple.com/realtime/latest", "Apple")
+
+    # # 一次request html只會有20則新聞
+    # result   requests.get(link)
+    # links   BeautifulSoup(result.text, features "html.parser").find_all('article', class_ "post-style3 infScroll postCount")
 
     counter   1
     for link in links:
@@ -518,6 +523,9 @@ if SwitchSET:
     print("vvvvvvvvv  開始: 三立新聞")
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://setn.com/viewall.aspx", "SET")
+
+    # result   requests.get("https://setn.com/viewall.aspx")
+    # links   BeautifulSoup(result.text, features "html.parser").find_all("div", class_ "col-sm-12 newsItems")
 
     counter   1
     for link in links:
@@ -656,11 +664,14 @@ if SwitchMIRROR:
 if SwitchTVBS:
     print("vvvvvvvvv  開始: TVBS")
     earlier   datetime.now() - timedelta(hours timeSlot)
-    links   getLinksFromURL("https://news.tvbs.com.tw/realtime", "TVBS")
+    # links   getLinksFromURL("https://news.tvbs.com.tw/realtime", "TVBS")
+
+    result   requests.get("https://news.tvbs.com.tw/realtime")
+    links   BeautifulSoup(result.text, features "html.parser").find_all("li")
 
     counter   1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.2)
         if link.find("a") is None or link.find("div", class_ "time") is None:
             continue
 
@@ -766,11 +777,15 @@ if SwitchCTWANT:
     counter   1
     for page in range(1, scrollPages-2):
         url   "https://ctwant.com/category/最新?page " + str(page)
-        soup   getSoupFromURL(url, 0, scrollDelay)
-        links   soup.find_all("div", class_ "p-realtime__item")
+        # soup   getSoupFromURL(url, 0, scrollDelay)
+        # links   soup.find_all("div", class_ "p-realtime__item")
+
+        result   requests.get(url)
+        links   BeautifulSoup(result.text, features "html.parser").find_all("div", class_ "p-realtime__item")
+
 
         for link in links:
-            time.sleep(0.1)
+            time.sleep(0.2)
 
             newsTime   str(link.find("time")["datetime"])
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
