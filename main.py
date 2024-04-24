@@ -9,15 +9,16 @@ SwitchMIRROR    1   # 鏡週刊
 SwitchTVBS      1   # TVBS
 SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
-SwitchEBC       1   # 東森新聞
+SwitchEBC       0   # 東森新聞
 SwitchCTS       1   # 華視新聞
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "timeSlot" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-scrollPages   4    # >  4 ，自由和聯合新聞數量較多   
+scrollPages   5    # >  4 ，自由和聯合新聞數量較多   
 timeSlot      1.1   # 收集幾個小時內的新聞
 scrollDelay   4.0   # 模擬滑鼠滾輪往下滾的間隔時間
+tinyurlDelay   1.5  # 縮網址時點擊的間隔時間
 
 places    ["竹市", "消防局", "消防署", "竹塹"]
 persons   ["高虹安", "高市長", "特搜", "搜救人員", "消防役", "EMT",
@@ -105,6 +106,8 @@ opt.add_argument(f"--user-agent {userAgent}")
 opt.add_argument("--disable-notifications")
 opt.add_experimental_option('excludeSwitches', ['enable-logging'])
 
+opt.add_argument("--headless")
+
 service_   Service(executable_path driverPath)
 driver   webdriver.Chrome(service service_, options opt)
 
@@ -168,7 +171,10 @@ def isInTimeRange(newsTime, dateFormat, earlier):
 def getSoupFromURL(url, scrollPages, scrollDelay):
     driver.get(url)
     for x in range(0, scrollPages):
-        time.sleep(scrollDelay)
+        if "udn" in url:
+            time.sleep(10)
+        else:
+            time.sleep(scrollDelay)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(scrollDelay)
     soup   BeautifulSoup(driver.page_source,"html.parser")
@@ -256,6 +262,7 @@ if SwitchLTN:
         newsTime   str(times[0])
 
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看自由時報")
             break
 
         print(str(counter) + "  " + newsTime)
@@ -327,6 +334,7 @@ if SwitchUDN:
         else:
             newsTime   str(newsTime[1]) # Skip comment in html
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看聯合新聞網")
             break
 
         print(str(counter) + " " + str(newsTime))
@@ -387,6 +395,7 @@ if SwitchCNA:
         newsTitle   str(link.find("span").contents[0])
         newsTime   link.find("div", class_ "date").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看中央社")
             break
         print(str(counter) + " " + newsTime)
         counter +  1
@@ -445,6 +454,7 @@ if SwitchET:
 
         newsTime   str(link.find("span", class_ "date").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看ETtoday")
             break
 
         newsTitle   link.find("a")
@@ -489,6 +499,7 @@ if SwitchApple:
 
         newsTime    link.find("time").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看壹蘋新聞網")
             break
 
         print(str(counter) + " " + newsTime)
@@ -559,6 +570,7 @@ if SwitchSET:
             newsTimeStr   str(newsTime.contents[0])[:-3]
 
         if not isInTimeRange(newsTimeStr, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看三立新聞")
             break
 
         print(str(counter) + "  " + newsTimeStr)
@@ -633,6 +645,7 @@ if SwitchMIRROR:
                         break
 
         if not isInTimeRange(newsTime, "%Y.%m.%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看鏡週刊")
             break
 
         print(str(counter) + "  " + newsTime)
@@ -683,6 +696,7 @@ if SwitchTVBS:
         times   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", authorAndTime)
         newsTime   str(times[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看TVBS")
             break
         
         print(str(counter) + "  " + newsTime)
@@ -737,6 +751,7 @@ if SwitchNOWNEWS:
         
         newsTime   str(link.find("p", class_ "time").contents[-1])
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看NOWNEWS")
             break
 
         print(str(counter) + "  " + newsTime)
@@ -775,7 +790,11 @@ if SwitchCTWANT:
     earlier   datetime.now() - timedelta(hours timeSlot)
 
     counter   1
+    exceedTimeRange   False
     for page in range(1, scrollPages-2):
+        if exceedTimeRange:
+            break
+
         url   "https://ctwant.com/category/最新?page " + str(page)
         # soup   getSoupFromURL(url, 0, scrollDelay)
         # links   soup.find_all("div", class_ "p-realtime__item")
@@ -783,12 +802,13 @@ if SwitchCTWANT:
         result   requests.get(url)
         links   BeautifulSoup(result.text, features "html.parser").find_all("div", class_ "p-realtime__item")
 
-
         for link in links:
             time.sleep(0.2)
 
             newsTime   str(link.find("time")["datetime"])
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
+                print("下一則新聞已超過時間範圍，停止查看CTWANT")
+                exceedTimeRange   True
                 break
 
             print(str(counter) + " " + newsTime)
@@ -844,6 +864,7 @@ if SwitchEBC:
             newsInfo   str(subSoup.find("div", class_ "info"))
             newsTime   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsInfo)[0]
             if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+                print("下一則新聞已超過時間範圍，停止查看東森新聞")
                 break
 
             print(str(counter) + " " + newsTime)
@@ -882,6 +903,7 @@ if SwitchCTS:
 
         newsTime   str(link.find("div", class_ "newstime").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看華視新聞")
             break
 
         print(str(counter) + "  " + newsTime)
@@ -944,13 +966,15 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
         except (NoSuchElementException, ElementNotInteractableException):
             doNothing   True
 
-        time.sleep(0.5)
+        time.sleep(1)
 
         # Accept Cookie
         try:
             driver.find_element(By.XPATH, "//button[@data-test-id 'cookies_section_got_it_btn']").click()
         except (NoSuchElementException, ElementNotInteractableException):
             doNothing   True
+
+        time.sleep(1)
 
         if getNextNews:
             newsInfo   newsInfoQueue.get()
@@ -973,7 +997,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 長網址輸入區 " + str(type(err)))
             getNextNews   False
             continue
-        time.sleep(1.5)
+        time.sleep(tinyurlDelay)
 
         # generate short url
         try:
@@ -982,7 +1006,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 縮網址按鈕 " + str(type(err)))
             getNextNews   False
             continue
-        time.sleep(1.5)
+        time.sleep(tinyurlDelay)
 
         # copy short url
         try:
@@ -991,7 +1015,7 @@ with open(resultFilename, 'w', encoding 'UTF-8') as f:
             print("[ERROR] 短網址內容 " + str(type(err)))
             getNextNews   False
             continue    
-        time.sleep(1.5)
+        time.sleep(tinyurlDelay)
 
         getNextNews   True
         print(". " + newsInfo[0])
