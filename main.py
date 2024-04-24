@@ -1,12 +1,12 @@
 # 0   不爬文 ;  1   爬文
-SwitchLTN       1   # 自由時報 
-SwitchUDN       1   # 聯合新聞網
-SwitchCNA       1   # 中央社
-SwitchET        1   # ETtoday
-SwitchApple     1   # 壹蘋新聞網
-SwitchSET       1   # 三立新聞網
-SwitchMIRROR    1   # 鏡週刊 
-SwitchTVBS      1   # TVBS
+SwitchLTN       0   # 自由時報 
+SwitchUDN       0   # 聯合新聞網
+SwitchCNA       0   # 中央社
+SwitchET        0   # ETtoday
+SwitchApple     0   # 壹蘋新聞網
+SwitchSET       0   # 三立新聞網
+SwitchMIRROR    0   # 鏡週刊 
+SwitchTVBS      0   # TVBS
 SwitchNOWNEWS   1   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
@@ -107,7 +107,7 @@ opt.add_argument(f"--user-agent {userAgent}")
 opt.add_argument("--disable-notifications")
 opt.add_experimental_option('excludeSwitches', ['enable-logging'])
 
-opt.add_argument("--headless")
+opt.add_argument("--headless new")
 
 service_   Service(executable_path driverPath)
 driver   webdriver.Chrome(service service_, options opt)
