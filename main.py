@@ -1,13 +1,13 @@
 # 0   不爬文 ;  1   爬文
-SwitchLTN       0   # 自由時報 
-SwitchUDN       0   # 聯合新聞網
-SwitchCNA       0   # 中央社
-SwitchET        0   # ETtoday
-SwitchApple     0   # 壹蘋新聞網
-SwitchSET       0   # 三立新聞網
-SwitchMIRROR    0   # 鏡週刊 
-SwitchTVBS      0   # TVBS
-SwitchNOWNEWS   1   # NOWNEWS
+SwitchLTN       1   # 自由時報 
+SwitchUDN       1   # 聯合新聞網
+SwitchCNA       1   # 中央社
+SwitchET        1   # ETtoday
+SwitchApple     1   # 壹蘋新聞網
+SwitchSET       1   # 三立新聞網
+SwitchMIRROR    1   # 鏡週刊 
+SwitchTVBS      1   # TVBS
+SwitchNOWNEWS   0   # NOWNEWS
 SwitchCTWANT    1   # CTWANT
 SwitchEBC       1   # 東森新聞
 SwitchCTS       1   # 華視新聞
@@ -54,6 +54,7 @@ deleteTagsCTS       ["財經", "氣象", "娛樂", "運動", "藝文"]
 #   以下內容不要修改
 #############################################################
 doShortURL   True
+headless   True
 
 import re
 import sys
@@ -107,7 +108,8 @@ opt.add_argument(f"--user-agent {userAgent}")
 opt.add_argument("--disable-notifications")
 opt.add_experimental_option('excludeSwitches', ['enable-logging'])
 
-opt.add_argument("--headless new")
+if headless:
+    opt.add_argument("--headless new")
 
 service_   Service(executable_path driverPath)
 driver   webdriver.Chrome(service service_, options opt)
@@ -209,8 +211,7 @@ def getLinksFromURL(url, pressName):
     if pressName    "TVBS":
         return soup.find_all("li")
     if pressName    "EBC":
-        links   soup.find_all("div", class_ "news-list-box")
-        return links[0].find_all("div", class_ "style1 white-box")
+        return soup.find_all("a", class_ "item row_box")
     if pressName    "CTS":
         links   soup.find_all("div", class_ "newslist-container flexbox one_row_style")
         return links[0].find_all("a")
@@ -244,6 +245,7 @@ def getCTSNewsTagFromLink(link):
 # 自由時報 即時新聞總覽
 if SwitchLTN:
     print("vvvvvvvvv  開始: 自由時報")
+    flagOutOfTimeRange   False
     startLTN   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://news.ltn.com.tw/list/breakingnews", "LTN")
@@ -272,6 +274,7 @@ if SwitchLTN:
 
         if checkTimeValid and not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看自由時報")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + "  " + newsTime)
@@ -305,12 +308,15 @@ if SwitchLTN:
     endLTN   timer()
     print("^^^^^^^^^  結束: 自由時報")
     print("用時 " + str(timedelta(seconds   endLTN - startLTN)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 自由時報] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # 聯合新聞網 即時新聞
 if SwitchUDN:
     print("vvvvvvvvv  開始: 聯合新聞網")
+    flagOutOfTimeRange   False
     startUDN   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://udn.com/news/breaknews", "UDN")
@@ -347,6 +353,7 @@ if SwitchUDN:
             newsTime   str(newsTime[1]) # Skip comment in html
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看聯合新聞網")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + " " + str(newsTime))
@@ -380,12 +387,15 @@ if SwitchUDN:
     endUDN   timer()
     print("^^^^^^^^^  結束: 聯合新聞網")
     print("用時 " + str(timedelta(seconds   endUDN - startUDN)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 聯合新聞網] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # 中央社 即時新聞列表
 if SwitchCNA:
     print("vvvvvvvvv  開始: 中央社")
+    flagOutOfTimeRange   False
     startCNA   timer()
     
     # 中央社需要先由google搜尋的結果點進去，直接get中央社網站會被偵測到
@@ -411,6 +421,7 @@ if SwitchCNA:
         newsTime   link.find("div", class_ "date").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看中央社")
+            flagOutOfTimeRange   True
             break
         print(str(counter) + " " + newsTime)
         counter +  1
@@ -457,12 +468,15 @@ if SwitchCNA:
     endCNA   timer()
     print("^^^^^^^^^  結束: 中央社")
     print("用時 " + str(timedelta(seconds   endCNA - startCNA)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 中央社] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # ETtoday 新聞總覽
 if SwitchET:
     print("vvvvvvvvv  開始: ETtoday")
+    flagOutOfTimeRange   False
     startET   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     # links   getLinksFromURL("https://ettoday.net/news/news-list.htm", "ETtoday")
@@ -477,6 +491,7 @@ if SwitchET:
         newsTime   str(link.find("span", class_ "date").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看ETtoday")
+            flagOutOfTimeRange   True
             break
 
         newsTitle   link.find("a")
@@ -504,12 +519,15 @@ if SwitchET:
     endET   timer()
     print("^^^^^^^^^  結束: ETtoday")
     print("用時 " + str(timedelta(seconds   endET - startET)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - ETtoday] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # 壹蘋新聞網 最新新聞列表
 if SwitchApple:
     print("vvvvvvvvv  開始: 壹蘋新聞網")
+    flagOutOfTimeRange   False
     startApple   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://tw.nextapple.com/realtime/latest", "Apple")
@@ -525,6 +543,7 @@ if SwitchApple:
         newsTime    link.find("time").contents[0]
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看壹蘋新聞網")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + " " + newsTime)
@@ -553,12 +572,15 @@ if SwitchApple:
     endApple   timer()
     print("^^^^^^^^^  結束: 壹蘋新聞網")
     print("用時 " + str(timedelta(seconds   endApple - startApple)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 壹蘋新聞網] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # 三立新聞 新聞總覽
 if SwitchSET:
     print("vvvvvvvvv  開始: 三立新聞")
+    flagOutOfTimeRange   False
     startSET   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://setn.com/viewall.aspx", "SET")
@@ -599,6 +621,7 @@ if SwitchSET:
 
         if not isInTimeRange(newsTimeStr, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看三立新聞")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + "  " + newsTimeStr)
@@ -626,12 +649,15 @@ if SwitchSET:
     endSET   timer()
     print("^^^^^^^^^  結束: 三立新聞")
     print("用時 " + str(timedelta(seconds   endSET - startSET)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 三立新聞] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # 鏡週刊 焦點新聞列表  
 if SwitchMIRROR:
     print("vvvvvvvvv  開始: 鏡週刊")
+    flagOutOfTimeRange   False
     startMirror   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://mirrormedia.mg/category/news", "Mirror")
@@ -677,6 +703,7 @@ if SwitchMIRROR:
 
         if not isInTimeRange(newsTime, "%Y.%m.%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看鏡週刊")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + "  " + newsTime)
@@ -703,12 +730,15 @@ if SwitchMIRROR:
     endMirror   timer()
     print("^^^^^^^^^  結束: 鏡週刊")
     print("用時 " + str(timedelta(seconds   endMirror - startMirror)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 鏡週刊] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # TVBS 即時新聞列表  
 if SwitchTVBS:
     print("vvvvvvvvv  開始: TVBS")
+    flagOutOfTimeRange   False
     startTVBS   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     # links   getLinksFromURL("https://news.tvbs.com.tw/realtime", "TVBS")
@@ -731,6 +761,7 @@ if SwitchTVBS:
         newsTime   str(times[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看TVBS")
+            flagOutOfTimeRange   True
             break
         
         print(str(counter) + "  " + newsTime)
@@ -759,12 +790,15 @@ if SwitchTVBS:
     endTVBS   timer()
     print("^^^^^^^^^  結束: TVBS")
     print("用時 " + str(timedelta(seconds   endTVBS - startTVBS)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - TVBS] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # NOWNEWS 即時新聞
 if SwitchNOWNEWS:
     print("vvvvvvvvv  開始: NOWNEWS")
+    flagOutOfTimeRange   False
     startNOWNEWS   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
 
@@ -789,6 +823,7 @@ if SwitchNOWNEWS:
         newsTime   str(link.find("p", class_ "time").contents[-1])
         if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看NOWNEWS")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + "  " + newsTime)
@@ -820,12 +855,15 @@ if SwitchNOWNEWS:
     endNOWNEWS   timer()
     print("^^^^^^^^^  結束: NOWNEWS")
     print("用時 " + str(timedelta(seconds   endNOWNEWS - startNOWNEWS)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - NOWNEWS] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # CTWANT 最新新聞列表
 if SwitchCTWANT:
     print("vvvvvvvvv  開始: CTWANT")
+    flagOutOfTimeRange   False
     startCTWANT   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
 
@@ -848,6 +886,7 @@ if SwitchCTWANT:
             newsTime   str(link.find("time")["datetime"])
             if not isInTimeRange(newsTime, "%Y-%m-%d %H:%M", earlier):
                 print("下一則新聞已超過時間範圍，停止查看CTWANT")
+                flagOutOfTimeRange   True
                 exceedTimeRange   True
                 break
 
@@ -879,6 +918,8 @@ if SwitchCTWANT:
     endCTWANT   timer()
     print("^^^^^^^^^  結束: CTWANT")
     print("用時 " + str(timedelta(seconds   endCTWANT - startCTWANT)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - CTWANT] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
@@ -886,64 +927,66 @@ if SwitchCTWANT:
 # 看起來新聞內文的網頁有擋爬蟲
 if SwitchEBC:
     print("vvvvvvvvv  開始: 東森新聞")
+    flagOutOfTimeRange   False
     startEBC   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
 
+    links   getLinksFromURL("https://news.ebc.net.tw/realtime", "EBC")
+    
     counter   1
-    exceedTimeRange   False
-    for page in range(1, scrollPages-2):
-        if exceedTimeRange:
+    for link in links:
+        time.sleep(0.1)
+        if not isinstance(link, Tag):
+            continue
+
+        newsLink   "https://news.ebc.net.tw/" + link["href"]
+        subResult   requests.get(newsLink, headers headers)
+        subSoup   BeautifulSoup(subResult.text, features "html.parser")
+
+        for div in subSoup.find_all("div", class_ "inline_text has_marker"): 
+            div.extract()
+
+        newsDatetime   str(subSoup.find("div", class_ "article_info_date"))
+        newsDate   re.findall(r"\d{4}-\d{2}-\d{2}", newsDatetime)[0]
+        newsTime   re.findall(r"\d{2}:\d{2}", newsDatetime)[0]
+        fullNewsTime   newsDate + " " + newsTime
+        if not isInTimeRange(fullNewsTime, "%Y-%m-%d %H:%M", earlier):
+            print("下一則新聞已超過時間範圍，停止查看東森新聞")
+            flagOutOfTimeRange   True
             break
 
-        urlEBC   "https://news.ebc.net.tw/realtime?page " + str(page)
-        links   getLinksFromURL(urlEBC, "EBC")
+        print(str(counter) + " " + fullNewsTime)
+        counter +  1
 
-        time.sleep(1)
-        for link in links:
-            time.sleep(0.1)
-            if not isinstance(link, Tag):
-                continue
+        newsTag   subSoup.find("div", class_ "breadcrumb").contents[3].contents[0]["title"]
+        if newsTag in deleteTagsEBC:
+            continue
 
-            newsLink   "https://news.ebc.net.tw" + str(link.find("a")["href"])
-            subResult   requests.get(newsLink, headers headers)
-            subSoup   BeautifulSoup(subResult.text, features "html.parser")
+        newsContent   str(subSoup.find("div", class_ "article_content"))
 
-            newsInfo   str(subSoup.find("div", class_ "info"))
-            newsTime   re.findall(r"\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}", newsInfo)[0]
-            if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
-                print("下一則新聞已超過時間範圍，停止查看東森新聞")
-                exceedTimeRange   True
-                break
+        stopWords   ["更多鏡週刊報導", "以上言論不代表東森新聞立場", "東森新聞關心您", "往下看更多",  "延伸閱讀"]
+        for stopWord in stopWords:
+            pos   newsContent.find(stopWord)
+            if pos !  -1:
+                newsContent   newsContent[:pos]
 
-            print(str(counter) + " " + newsTime)
-            counter +  1
+        keywords   getKeywordInNews(newsContent)
 
-            newsTag   link.find("div", class_ "news-category").contents[0]
-            if newsTag in deleteTagsEBC:
-                continue
-
-            newsContent   str(subSoup.find("div", class_ "raw-style"))
-
-            stopWords   ["更多鏡週刊報導", "往下看更多", "今日最熱門", "延伸閱讀"]
-            for stopWord in stopWords:
-                pos   newsContent.find(stopWord)
-                if pos !  -1:
-                    newsContent   newsContent[:pos]
-
-            keywords   getKeywordInNews(newsContent)
-
-            if len(keywords) !  0:
-                newsTitle   str(link.find("span", class_ "title").contents[0])
-                printResult(newsTitle, "（東森）", newsLink, keywords)
+        if len(keywords) !  0:
+            newsTitle   link["title"]
+            printResult(newsTitle, "（東森）", newsLink, keywords)
     endEBC   timer()
     print("^^^^^^^^^  結束: 東森新聞")
     print("用時 " + str(timedelta(seconds   endEBC - startEBC)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 東森新聞] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
 # 華視新聞 即時新聞列表
 if SwitchCTS:
     print("vvvvvvvvv  開始: 華視新聞")
+    flagOutOfTimeRange   False
     startCTS   timer()
     earlier   datetime.now() - timedelta(hours timeSlot)
     links   getLinksFromURL("https://news.cts.com.tw/real/index.html", "CTS")
@@ -955,6 +998,7 @@ if SwitchCTS:
         newsTime   str(link.find("div", class_ "newstime").contents[0])
         if not isInTimeRange(newsTime, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看華視新聞")
+            flagOutOfTimeRange   True
             break
 
         print(str(counter) + "  " + newsTime)
@@ -982,6 +1026,8 @@ if SwitchCTS:
     endCTS   timer()
     print("^^^^^^^^^  結束: 華視新聞")
     print("用時 " + str(timedelta(seconds   endCTS - startCTS)) + "\n")
+    if not flagOutOfTimeRange:
+        print("[WARNING - 華視新聞] 已看完目前列表所抓的新聞，尚未確認時間範圍內的所有新聞，可能要增加捲動次數")
 
 #################################################################################
 
