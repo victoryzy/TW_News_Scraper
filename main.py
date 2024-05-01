@@ -76,9 +76,9 @@ from selenium import webdriver
 from bs4 import BeautifulSoup, Tag
 from datetime import datetime, timedelta
 from timeit import default_timer as timer
+from urllib3.exceptions import InsecureRequestWarning
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from urllib3.exceptions import InsecureRequestWarning
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import ElementNotInteractableException
 from selenium.common.exceptions import ElementClickInterceptedException
@@ -561,7 +561,7 @@ if SWITCH_APPLE:
         print(str(counter) + " " + news_time)
         counter +  1
 
-        news_tag     link.find("div", class_ "category").contents[0]
+        news_tag   link.find("div", class_ "category").contents[0]
         if news_tag in delete_tags_Apple:
             continue
 
@@ -688,6 +688,11 @@ if SWITCH_MIRROR:
                     news_title   str(div.contents[0])
                     news_link   "https://mirrormedia.mg" + str(link["href"])
         if news_link is None:
+            continue
+        
+        # 整篇新聞都是圖，沒有文字，新聞時間格式不同，直接略過不看
+        if "圖輯" in news_title:
+            print("略過 " + news_title)
             continue
 
         sub_result   None
@@ -1084,7 +1089,7 @@ with open(result_filename, 'w', encoding 'UTF-8') as f:
         # Accept Cookie
         try:
             driver.find_element(By.XPATH, "//button[@data-test-id 'cookies_section_got_it_btn']").click()
-        except (NoSuchElementException, ElementNotInteractableException):
+        except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException):
             doNothing   True
 
         time.sleep(1)
