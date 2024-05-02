@@ -524,6 +524,8 @@ if SWITCH_ET:
         news_content   sub_soup.find_all("div", class_ "story")
         pos   str(news_content).find("其他新聞")
         news_content   str(news_content)[:pos-1]
+        pos   str(news_content).find("延伸閱讀")
+        news_content   str(news_content)[:pos-1]
 
         keywords   get_keyword_in_news(str(news_content))
         if len(keywords) !  0:
