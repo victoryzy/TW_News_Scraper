@@ -1,16 +1,16 @@
 # 0   不爬文 ;  1   爬文
-SWITCH_LTN       1   # 自由時報 
-SWITCH_UDN       1   # 聯合新聞網
-SWITCH_CNA       1   # 中央社
-SWITCH_ET        1   # ETtoday
+SWITCH_LTN       0   # 自由時報 
+SWITCH_UDN       0   # 聯合新聞網
+SWITCH_CNA       0   # 中央社
+SWITCH_ET        0   # ETtoday
 SWITCH_APPLE     1   # 壹蘋新聞網
-SWITCH_SET       1   # 三立新聞網
-SWITCH_MIRROR    1   # 鏡週刊 
-SWITCH_TVBS      1   # TVBS
-SWITCH_NOWNEWS   1   # NOWNEWS
-SWITCH_CTWANT    1   # CTWANT
-SWITCH_EBC       1   # 東森新聞
-SWITCH_CTS       1   # 華視新聞
+SWITCH_SET       0   # 三立新聞網
+SWITCH_MIRROR    0   # 鏡週刊 
+SWITCH_TVBS      0   # TVBS
+SWITCH_NOWNEWS   0   # NOWNEWS
+SWITCH_CTWANT    0   # CTWANT
+SWITCH_EBC       0   # 東森新聞
+SWITCH_CTS       0   # 華視新聞
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "TIMESLOT" 個小時內的新聞，
@@ -282,7 +282,7 @@ if SWITCH_LTN:
         except IndexError:
             print("[ERROR] 時間的格式不同，不判斷時間是否在範圍內")
             time_is_valid   False
-            news_time   newsTimeString
+            news_time   news_time_string
 
         if time_is_valid and not is_in_time_range(news_time, "%Y/%m/%d %H:%M", earlier):
             print("下一則新聞已超過時間範圍，停止查看自由時報")
@@ -572,7 +572,7 @@ if SWITCH_APPLE:
 
         for s in sub_soup.select("a"):
             s.extract()
-
+        
         news_contents   sub_soup.find_all("div", class_ "post-content")
         news_content   sub_soup.find_all("blockquote")
         news_content +  news_contents[0].findAll("p")
