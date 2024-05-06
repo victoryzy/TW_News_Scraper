@@ -1,16 +1,16 @@
 # 0 = 不爬文 ;  1 = 爬文
-SWITCH_LTN     = 0   # 自由時報 
-SWITCH_UDN     = 0   # 聯合新聞網
-SWITCH_CNA     = 0   # 中央社
-SWITCH_ET      = 0   # ETtoday
+SWITCH_LTN     = 1   # 自由時報 
+SWITCH_UDN     = 1   # 聯合新聞網
+SWITCH_CNA     = 1   # 中央社
+SWITCH_ET      = 1   # ETtoday
 SWITCH_APPLE   = 1   # 壹蘋新聞網
-SWITCH_SET     = 0   # 三立新聞網
-SWITCH_MIRROR  = 0   # 鏡週刊 
-SWITCH_TVBS    = 0   # TVBS
-SWITCH_NOWNEWS = 0   # NOWNEWS
-SWITCH_CTWANT  = 0   # CTWANT
-SWITCH_EBC     = 0   # 東森新聞
-SWITCH_CTS     = 0   # 華視新聞
+SWITCH_SET     = 1   # 三立新聞網
+SWITCH_MIRROR  = 1   # 鏡週刊 
+SWITCH_TVBS    = 1   # TVBS
+SWITCH_NOWNEWS = 1   # NOWNEWS
+SWITCH_CTWANT  = 1   # CTWANT
+SWITCH_EBC     = 1   # 東森新聞
+SWITCH_CTS     = 1   # 華視新聞
 
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "TIMESLOT" 個小時內的新聞，
@@ -264,7 +264,7 @@ if SWITCH_LTN:
 
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
         news_link = str(link['href'])
         sub_soup = get_subsoup_from_url(news_link)
 
@@ -335,7 +335,7 @@ if SWITCH_UDN:
 
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
         news_title = None
         news_time = None
         news_link = None
@@ -425,7 +425,7 @@ if SWITCH_CNA:
     xpath_counter = 1
     counter = 1
     for link in links[0]:
-        time.sleep(0.3)
+        time.sleep(0.5)
         if link.has_attr("style"):
             continue
 
@@ -498,7 +498,7 @@ if SWITCH_ET:
 
     counter = 1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.5)
 
         news_time = str(link.find("span", class_="date").contents[0])
         if not is_in_time_range(news_time, "%Y/%m/%d %H:%M", earlier):
@@ -552,7 +552,7 @@ if SWITCH_APPLE:
 
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         news_time  = link.find("time").contents[0]
         if not is_in_time_range(news_time, "%Y/%m/%d %H:%M", earlier):
@@ -604,7 +604,7 @@ if SWITCH_SET:
 
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
         link_and_title = link.find("a", class_="gt")
         news_link = str(link_and_title["href"])
         if "https" not in str(link_and_title["href"]):
@@ -678,7 +678,7 @@ if SWITCH_MIRROR:
 
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
         news_link = None
         news_title = None
         news_time = None
@@ -767,7 +767,7 @@ if SWITCH_TVBS:
 
     counter = 1
     for link in links:
-        time.sleep(0.2)
+        time.sleep(0.5)
         if link.find("a") is None or link.find("div", class_="time") is None:
             continue
 
@@ -834,7 +834,7 @@ if SWITCH_NOWNEWS:
 
     counter = 1
     for link in links[0]:
-        time.sleep(0.1)
+        time.sleep(0.5)
         if not isinstance(link, Tag):
             continue
         
@@ -899,7 +899,7 @@ if SWITCH_CTWANT:
         links = BeautifulSoup(result.text, features="html.parser").find_all("div", class_="p-realtime__item")
 
         for link in links:
-            time.sleep(0.2)
+            time.sleep(0.5)
 
             news_time = str(link.find("time")["datetime"])
             if not is_in_time_range(news_time, "%Y-%m-%d %H:%M", earlier):
@@ -953,7 +953,7 @@ if SWITCH_EBC:
     
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
         if not isinstance(link, Tag):
             continue
 
@@ -1011,7 +1011,7 @@ if SWITCH_CTS:
 
     counter = 1
     for link in links:
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         news_time = str(link.find("div", class_="newstime").contents[0])
         if not is_in_time_range(news_time, "%Y/%m/%d %H:%M", earlier):
