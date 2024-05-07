@@ -15,8 +15,8 @@ SWITCH_CTS     = 1   # 華視新聞
 # 有些新聞網頁在滑鼠滾輪往下滾的時候會載入新的新聞，
 # 假如下滑這些頁數以後還是沒有爬完 "TIMESLOT" 個小時內的新聞，
 # 可以把下面這個數字加大，但爬文所需時間會慢一些
-SCROLL_PAGES  = 5    # >= 4 ，自由和聯合新聞數量較多   
-TIMESLOT      = 1.1  # 收集幾個小時內的新聞
+SCROLL_PAGES  = 4    # >= 4 ，自由和聯合新聞數量較多   
+TIMESLOT      = 1.0  # 收集幾個小時內的新聞
 SCROLL_DELAY  = 4.0  # 模擬滑鼠滾輪往下滾的間隔時間
 TINYURL_DELAY = 1.5  # 縮網址時點擊的間隔時間
 
@@ -64,7 +64,7 @@ delete_tags_CTS     = ["財經", "氣象", "娛樂", "運動", "藝文"]
 #############################################################
 #   以下內容不要修改
 #############################################################
-DO_SHORT_URL = True
+DO_SHORT_URL = False
 HEADLESS = True
 
 import re
@@ -1051,6 +1051,27 @@ if SWITCH_CTS:
 
 if not DO_SHORT_URL:
     driver.close()
+    
+    with open(result_filename, 'w', encoding='UTF-8') as f:
+        counter = 1
+        news_info_queue.put(None) # To indicate termination
+        while True:
+            news_info = news_info_queue.get()
+
+            if news_info == None:
+                f.write("=========================================\n")
+                f.write("開始執行時間：" + str(program_start_t) + "\n")
+                f.write("執行結束時間：" + str(datetime.now()) + "\n")
+                f.write("抓取 " + str(TIMESLOT) + " 個小時內的新聞\n")
+                f.write("總共有 " + str(counter - 1) + " 則相關新聞\n")
+                break
+            else:
+                print(". " + news_info[0])
+                print(news_info[1])
+                print(news_info[2])
+                f.write(". " + news_info[0] + "\n")
+                f.write(news_info[1] + "\n")
+                counter += 1
     exit()
 
 # tinyurl縮網址
